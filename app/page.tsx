@@ -69,18 +69,6 @@ export default async function Home() {
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
             <Leaderboard />
-
-            <div className="bg-slate-900 text-slate-50 p-6 rounded-xl">
-              <h3 className="font-bold mb-2">System Architecture</h3>
-              <ul className="text-sm space-y-2 text-slate-300 list-disc pl-4">
-                <li>Redis Strings for Inventory</li>
-                <li>Lua Scripts for Atomicity</li>
-                <li>Redis Streams for Queuing</li>
-                <li>Pipelines for Batch Writes</li>
-                <li>ZSets for Indexing & Ranking</li>
-                <li>AOF Persistence Enabled</li>
-              </ul>
-            </div>
           </div>
         </div>
       </main>
