@@ -9,42 +9,38 @@ export async function POST() {
     const products = [
       {
         id: "p1",
-        name: "Gaming Laptop 2025",
+        name: "2025 年遊戲筆記型電腦",
         price: 1299,
         image: "/modern-laptop-workspace.png",
         stock: 50,
       },
       {
         id: "p2",
-        name: "Wireless Noise Canceling Headphones",
+        name: "無線降噪耳機",
         price: 299,
         image: "/diverse-people-listening-headphones.png",
         stock: 100,
       },
       {
         id: "p3",
-        name: "Smart Watch Series X",
+        name: "2025 年智能手錶",
         price: 399,
         image: "/modern-smartwatch.png",
         stock: 20,
       },
       {
         id: "p4",
-        name: "4K Ultra HD Monitor",
+        name: "4K 超級高清監視器",
         price: 450,
         image: "/computer-monitor.png",
-        stock: 5, // Low stock for testing
+        stock: 5,
       },
     ]
 
     const pipeline = redis.pipeline()
 
     for (const p of products) {
-      // Store product details as JSON or Hash.
-      // Using JSON for flexibility as requested.
       pipeline.json.set(keys.product(p.id), "$", p)
-
-      // Initialize stock separately for atomic operations
       pipeline.set(keys.productStock(p.id), p.stock)
     }
 

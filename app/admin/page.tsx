@@ -3,45 +3,50 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DeleteOrderButton, CreateProductDialog, RestockButton } from "@/components/admin-actions"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
-// Force dynamic since we are fetching live data
 export const dynamic = "force-dynamic"
 
 export default async function AdminPage() {
   const [products, { orders, total }] = await Promise.all([
     getProducts(),
-    getGlobalOrders(1, 50), // Fetch first 50 orders
+    getGlobalOrders(1, 50),
   ])
 
   return (
     <div className="container mx-auto py-10 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-        <Badge variant="outline" className="text-sm py-1 px-3">
-          Redis Powered
-        </Badge>
+      <div className="flex items-center gap-4 mb-8">
+        <Link href="/">
+          <Button variant="ghost" size="icon" className="text-orange-950 cursor-pointer">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <h1 className="text-3xl font-bold">管理員儀表板</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-lg font-medium">總產品數</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{products.length}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-lg font-medium">總訂單數</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{total}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-lg font-medium">總收益</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -53,25 +58,27 @@ export default async function AdminPage() {
 
       <Tabs defaultValue="products" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="orders">Recent Orders</TabsTrigger>
+          <TabsTrigger value="products" className="text-lg cursor-pointer px-2">產品</TabsTrigger>
+          <TabsTrigger value="orders" className="text-lg cursor-pointer px-2">訂單</TabsTrigger>
         </TabsList>
 
         <TabsContent value="products">
           <Card>
-            <CardHeader>
-              <CardTitle>Product Inventory</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>產品庫存</CardTitle>
+              <CreateProductDialog />
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Image</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>編號</TableHead>
+                    <TableHead>圖片</TableHead>
+                    <TableHead>名稱</TableHead>
+                    <TableHead>價格</TableHead>
+                    <TableHead>庫存</TableHead>
+                    <TableHead>狀態</TableHead>
+                    <TableHead className="text-right">動作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -94,15 +101,18 @@ export default async function AdminPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={product.stock > 0 ? "default" : "destructive"}>
-                          {product.stock > 0 ? "In Stock" : "Sold Out"}
+                          {product.stock > 0 ? "在庫" : "售罄"}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <RestockButton productId={product.id} />
                       </TableCell>
                     </TableRow>
                   ))}
                   {products.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                        No products found. Run the seed script?
+                      <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                        沒有找到產品。運行種子腳本?
                       </TableCell>
                     </TableRow>
                   )}
@@ -115,18 +125,19 @@ export default async function AdminPage() {
         <TabsContent value="orders">
           <Card>
             <CardHeader>
-              <CardTitle>Global Order Log</CardTitle>
+              <CardTitle>全球訂單日誌</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>User ID</TableHead>
-                    <TableHead>Product ID</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>訂單編號</TableHead>
+                    <TableHead>使用者編號</TableHead>
+                    <TableHead>產品編號</TableHead>
+                    <TableHead>價格</TableHead>
+                    <TableHead>時間</TableHead>
+                    <TableHead>狀態</TableHead>
+                    <TableHead className="text-right">動作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -144,12 +155,15 @@ export default async function AdminPage() {
                           {order.status}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-right">
+                        <DeleteOrderButton orderId={order.id} />
+                      </TableCell>
                     </TableRow>
                   ))}
                   {orders.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                        No orders processed yet.
+                      <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                        沒有處理訂單。
                       </TableCell>
                     </TableRow>
                   )}

@@ -19,19 +19,19 @@ export default async function Home() {
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold">R</span>
             </div>
-            <span className="font-bold text-xl">RedisSeckill</span>
+            <span className="font-bold text-xl">Redis秒殺系統</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/admin">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="cursor-pointer">
                 <ShieldCheck className="h-4 w-4 mr-2" />
-                Admin
+                管理員專區
               </Button>
             </Link>
             <Link href="/orders">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="cursor-pointer">
                 <ShoppingBag className="h-4 w-4 mr-2" />
-                My Orders
+                我的訂單
               </Button>
             </Link>
           </div>
@@ -43,9 +43,9 @@ export default async function Home() {
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-8">
             <div className="space-y-2">
-              <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">Flash Sale Live</h1>
+              <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">秒殺系統</h1>
               <p className="text-muted-foreground text-lg">
-                High performance seckill system powered by Redis. Grab the deals before they're gone.
+                高性能秒殺系統，由 Redis 驅動。在它們消失之前搶購優惠。
               </p>
             </div>
 
@@ -57,10 +57,10 @@ export default async function Home() {
 
             {products.length === 0 && (
               <div className="p-12 border rounded-lg bg-muted/50 text-center">
-                <h3 className="text-lg font-medium mb-2">No active sales</h3>
-                <p className="text-muted-foreground mb-4">The system needs to be seeded with products.</p>
+                <h3 className="text-lg font-medium mb-2">沒有活動中的銷售</h3>
+                <p className="text-muted-foreground mb-4">系統需要被種子腳本填充。</p>
                 <form action="/api/seed" method="POST">
-                  <Button>Seed Demo Products</Button>
+                  <Button>種子腳本</Button>
                 </form>
               </div>
             )}
@@ -75,7 +75,7 @@ export default async function Home() {
 
       <footer className="border-t py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          Built with Next.js + Upstash Redis
+          建立於 Next.js + Upstash Redis
         </div>
       </footer>
     </div>

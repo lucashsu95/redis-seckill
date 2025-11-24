@@ -37,11 +37,11 @@ export default function OrdersPage() {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="flex items-center gap-4 mb-8">
         <Link href="/">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="text-orange-950 cursor-pointer">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold">My Orders</h1>
+        <h1 className="text-3xl font-bold">我的訂單</h1>
       </div>
 
       {loading ? (
@@ -54,7 +54,7 @@ export default function OrdersPage() {
             <Card key={order.id}>
               <CardHeader className="pb-2">
                 <div className="flex justify-between">
-                  <CardTitle className="text-base font-medium">Order #{order.id.slice(0, 8)}</CardTitle>
+                  <CardTitle className="text-base font-medium">訂單 #{order.id.slice(0, 8)}</CardTitle>
                   <span className="text-sm text-muted-foreground">
                     {new Date(order.createdAt).toLocaleDateString()}
                   </span>
@@ -63,7 +63,7 @@ export default function OrdersPage() {
               <CardContent>
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-muted-foreground">Product ID: {order.productId}</p>
+                    <p className="text-sm text-muted-foreground">產品編號: {order.productId}</p>
                     <p className="font-bold">${order.price}</p>
                   </div>
                   <div className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
@@ -76,9 +76,9 @@ export default function OrdersPage() {
         </div>
       ) : (
         <div className="text-center py-12 border rounded-lg bg-muted/50">
-          <p className="text-muted-foreground">No orders found.</p>
+          <p className="text-muted-foreground">還沒有訂單。</p>
           <Link href="/">
-            <Button variant="link">Start Shopping</Button>
+            <Button variant="link">開始購物</Button>
           </Link>
         </div>
       )}
