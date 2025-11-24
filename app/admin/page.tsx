@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DeleteOrderButton, CreateProductDialog, RestockButton } from "@/components/admin-actions"
+import { DeleteOrderButton, CreateProductDialog, RestockButton, DeleteProductButton } from "@/components/admin-actions"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -105,7 +105,10 @@ export default async function AdminPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <RestockButton productId={product.id} />
+                        <div className="flex items-center justify-end gap-1">
+                          <RestockButton productId={product.id} />
+                          <DeleteProductButton productId={product.id} productName={product.name} />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
