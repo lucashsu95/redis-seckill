@@ -16,7 +16,7 @@ export async function Leaderboard() {
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-orange-500" />
-          <CardTitle className="text-orange-900">Live Top Sellers</CardTitle>
+          <CardTitle className="text-orange-900">熱銷榜</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
@@ -31,12 +31,12 @@ export async function Leaderboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate text-orange-950">{product.name}</p>
-                  <p className="text-xs text-orange-700">${rank.revenue.toLocaleString()} Revenue</p>
+                  <p className="text-xs text-orange-700">${rank.revenue.toLocaleString()} 收入</p>
                 </div>
               </li>
             )
           })}
-          {rankings.length === 0 && <p className="text-sm text-muted-foreground italic">No sales yet.</p>}
+          {rankings.length === 0 && <p className="text-sm text-muted-foreground italic">還沒有銷售紀錄。</p>}
         </ul>
       </CardContent>
     </Card>

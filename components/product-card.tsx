@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { toast } from "sonner" // Assuming sonner is available or use simple alert
+import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 
 interface ProductCardProps {
@@ -59,24 +59,24 @@ export function ProductCard({ product }: ProductCardProps) {
       const data = await res.json()
 
       if (data.success) {
-        // Trigger worker processing in background (simulation)
-        fetch("/api/worker/process", { method: "POST" })
+        // Trigger worker processing in background (simulation) 如果沒有worker，可以注釋掉
+        // fetch("/api/worker/process", { method: "POST" })
 
-        toast.success("Order Placed!", {
-          description: `Order ID: ${data.orderId}`,
+        toast.success("訂單已下單!", {
+          description: `訂單 ID: ${data.orderId}`,
         })
         router.refresh()
       } else {
         // Revert optimistic update on failure
         setOptimisticStock((prev) => prev + 1)
-        toast.error("Purchase Failed", {
-          description: "Out of stock or system busy.",
+        toast.error("訂單下單失敗", {
+          description: "庫存不足或系統忙碌。",
         })
       }
     } catch (err) {
       // Revert optimistic update on error
       setOptimisticStock((prev) => prev + 1)
-      toast.error("Error", { description: "Something went wrong" })
+      toast.error("訂單下單失敗", { description: "某些地方出了問題" })
     } finally {
       setLoading(false)
     }
@@ -93,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {optimisticStock <= 0 && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
             <span className="text-white font-bold text-xl uppercase tracking-widest border-2 border-white px-4 py-2">
-              Sold Out
+              售罄
             </span>
           </div>
         )}
@@ -107,18 +107,18 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </CardHeader>
       <CardContent className="flex-1 pb-2">
-        <p className="text-sm text-muted-foreground mb-4">Limited quantity available. Grab yours before it's gone!</p>
+        <p className="text-sm text-muted-foreground mb-4">有限數量供應中。趕緊搶購，售罄即止！</p>
         <div className="flex items-center gap-2 text-sm font-medium">
           <div
             className={`h-2 w-2 rounded-full ${optimisticStock > 10 ? "bg-green-500" : optimisticStock > 0 ? "bg-orange-500" : "bg-red-500"}`}
           />
-          {optimisticStock > 0 ? `${optimisticStock} items left` : "Out of stock"}
+          {optimisticStock > 0 ? `${optimisticStock} 個` : "售罄"}
         </div>
       </CardContent>
       <CardFooter>
         <Button className="w-full" onClick={handleBuy} disabled={optimisticStock <= 0 || loading} size="lg">
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          {loading ? "Processing..." : "Buy Now"}
+          {loading ? "處理中..." : "購買"}
         </Button>
       </CardFooter>
     </Card>
