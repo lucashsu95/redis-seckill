@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +21,11 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useState("")
+  const [optimisticStock, setOptimisticStock] = useState(product.stock)
+
+  useEffect(() => {
+    setOptimisticStock(product.stock)
+  }, [product.stock])
 
   useEffect(() => {
     // simple user persistence
@@ -31,9 +37,13 @@ export function ProductCard({ product }: ProductCardProps) {
     setUserId(stored)
   }, [])
 
+  const router = useRouter()
+
   const handleBuy = async () => {
     if (!userId) return
     setLoading(true)
+    
+    setOptimisticStock((prev) => Math.max(0, prev - 1))
 
     try {
       const res = await fetch("/api/seckill", {
@@ -55,12 +65,17 @@ export function ProductCard({ product }: ProductCardProps) {
         toast.success("Order Placed!", {
           description: `Order ID: ${data.orderId}`,
         })
+        router.refresh()
       } else {
+        // Revert optimistic update on failure
+        setOptimisticStock((prev) => prev + 1)
         toast.error("Purchase Failed", {
           description: "Out of stock or system busy.",
         })
       }
     } catch (err) {
+      // Revert optimistic update on error
+      setOptimisticStock((prev) => prev + 1)
       toast.error("Error", { description: "Something went wrong" })
     } finally {
       setLoading(false)
@@ -75,7 +90,7 @@ export function ProductCard({ product }: ProductCardProps) {
           alt={product.name}
           className="h-full w-full object-cover transition-transform hover:scale-105"
         />
-        {product.stock <= 0 && (
+        {optimisticStock <= 0 && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
             <span className="text-white font-bold text-xl uppercase tracking-widest border-2 border-white px-4 py-2">
               Sold Out
@@ -95,13 +110,13 @@ export function ProductCard({ product }: ProductCardProps) {
         <p className="text-sm text-muted-foreground mb-4">Limited quantity available. Grab yours before it's gone!</p>
         <div className="flex items-center gap-2 text-sm font-medium">
           <div
-            className={`h-2 w-2 rounded-full ${product.stock > 10 ? "bg-green-500" : product.stock > 0 ? "bg-orange-500" : "bg-red-500"}`}
+            className={`h-2 w-2 rounded-full ${optimisticStock > 10 ? "bg-green-500" : optimisticStock > 0 ? "bg-orange-500" : "bg-red-500"}`}
           />
-          {product.stock > 0 ? `${product.stock} items left` : "Out of stock"}
+          {optimisticStock > 0 ? `${optimisticStock} items left` : "Out of stock"}
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" onClick={handleBuy} disabled={product.stock <= 0 || loading} size="lg">
+        <Button className="w-full" onClick={handleBuy} disabled={optimisticStock <= 0 || loading} size="lg">
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           {loading ? "Processing..." : "Buy Now"}
         </Button>

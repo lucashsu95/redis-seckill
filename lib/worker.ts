@@ -1,5 +1,10 @@
 import { redis, keys } from "./redis"
 
+type StreamEntry = [string, string[]]
+type StreamResult = [string, StreamEntry[]]
+type XReadResult = StreamResult[] | null
+
+
 export interface Order {
   id: string
   userId: string
@@ -8,6 +13,8 @@ export interface Order {
   status: "pending" | "completed" | "failed"
   createdAt: number
   processedAt?: number
+  // Index signature to allow Redis JSON storage
+  [key: string]: string | number | undefined
 }
 
 export async function processOrders(batchSize = 10) {
@@ -17,13 +24,14 @@ export async function processOrders(batchSize = 10) {
   // In a real app, we'd track the last ID processed.
   // Here, we'll read and then delete processed messages to keep it simple.
 
-  const streamData = await redis.xread([{ key: keys.ordersStream, id: "0" }], { count: batchSize, block: 1000 })
+  const streamData = (await redis.xread(keys.ordersStream, "0", {
+    count: batchSize,
+  })) as XReadResult
 
   if (!streamData || streamData.length === 0) {
     return { processed: 0, message: "No orders to process" }
   }
 
-  const streamKey = streamData[0][0]
   const messages = streamData[0][1]
 
   if (messages.length === 0) {

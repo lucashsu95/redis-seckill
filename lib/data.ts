@@ -1,5 +1,7 @@
 import { redis, keys } from "./redis"
 import type { Order } from "./worker"
+import type { RedisJsonMgetResponse } from "./redis-types"
+import { extractJsonValues } from "./redis-types"
 
 export interface Product {
   id: string
@@ -16,10 +18,10 @@ export async function getProducts(): Promise<Product[]> {
   // We need to exclude product:*:stock
 
   const productKeys: string[] = []
-  let cursor = 0
+  let cursor: number | string = 0
 
   do {
-    const [nextCursor, foundKeys] = await redis.scan(cursor, { match: "product:*", count: 100 })
+    const [nextCursor, foundKeys]: [number | string, string[]] = await redis.scan(cursor, { match: "product:*", count: 100 })
     cursor = nextCursor
 
     for (const key of foundKeys) {
@@ -27,24 +29,22 @@ export async function getProducts(): Promise<Product[]> {
         productKeys.push(key)
       }
     }
-  } while (cursor !== 0)
+  } while (Number(cursor) !== 0)
 
   if (productKeys.length === 0) return []
 
   // Fetch product details
-  const productsJSON = await redis.json.mget(productKeys, "$")
+  const productsJSON = (await redis.json.mget(productKeys, "$")) as RedisJsonMgetResponse<Omit<Product, 'stock'>>
 
   // Fetch current stock for each product
   const stockKeys = productKeys.map((k) => `${k}:stock`)
   const stocks = await redis.mget<string[]>(...stockKeys)
 
   // Combine data
+  const productDetails = extractJsonValues(productsJSON)
   return productKeys.map((key, index) => {
-    // redis.json.mget returns array of arrays if multiple paths, or just array of results.
-    // Here we asked for '$' so it wraps in array.
-    const details = (productsJSON[index] as any)[0]
     return {
-      ...details,
+      ...productDetails[index],
       stock: stocks[index] ? Number.parseInt(stocks[index]) : 0,
     }
   })
@@ -67,9 +67,9 @@ export async function getGlobalOrders(page = 1, limit = 20): Promise<{ orders: O
   // Fetch Order details
   // Note: JSON.MGET takes keys
   const orderKeys = orderIds.map((id) => keys.order(id as string))
-  const ordersJSON = await redis.json.mget(orderKeys, "$")
+  const ordersJSON = (await redis.json.mget(orderKeys, "$")) as RedisJsonMgetResponse<Order>
 
-  const orders = ordersJSON.map((o: any) => o[0] as Order)
+  const orders = extractJsonValues(ordersJSON)
 
   return { orders, total }
 }
@@ -80,9 +80,9 @@ export async function getUserOrders(userId: string): Promise<Order[]> {
   if (orderIds.length === 0) return []
 
   const orderKeys = orderIds.map((id) => keys.order(id as string))
-  const ordersJSON = await redis.json.mget(orderKeys, "$")
+  const ordersJSON = (await redis.json.mget(orderKeys, "$")) as RedisJsonMgetResponse<Order>
 
-  return ordersJSON.map((o: any) => o[0] as Order)
+  return extractJsonValues(ordersJSON)
 }
 
 export async function getLeaderboard(): Promise<{ productId: string; revenue: number }[]> {
