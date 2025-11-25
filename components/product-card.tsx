@@ -60,7 +60,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       if (data.success) {
         // Trigger worker processing in background (simulation) 如果沒有worker，可以注釋掉
-        // fetch("/api/worker/process", { method: "POST" })
+        fetch("/api/worker/process", { method: "POST" })
 
         toast.success("訂單已下單!", {
           description: `訂單 ID: ${data.orderId}`,

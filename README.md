@@ -78,13 +78,13 @@ pnpm install
 Worker 負責處理 Stream 訊息並將資料寫入多個 Redis Key 以維護索引。
 
 ```bash
-pnpm run worker
+pnpm worker
 ```
 
 ### 4\. 啟動 Next.js 應用 (Frontend & API)
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
 
   * **前台搶購頁面**: [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)
