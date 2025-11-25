@@ -92,11 +92,14 @@ pnpm run dev
 
 ## 壓力測試與驗證 (Testing)
 
-本專案建議使用 `k6` 進行壓力測試，以驗證系統在高併發下的穩定性與資料一致性。
+以 `k6` 進行壓力測試，驗證系統在高併發下的穩定性與資料一致性。
 
 ```bash
-# 執行 k6 測試腳本
+# 針對本機進行測試
 k6 run scripts/load-test.js
+
+# 針對已部署的 URL 進行測試
+BASE_URL=https://your-app.vercel.app k6 run scripts/load-test.js
 ```
 
 **驗證重點：** 確保在任何情況下，庫存數量準確，且 `orders:global` (後台列表) 總數與 `leaderboard:sales` (排行榜) 總分必須相等。
