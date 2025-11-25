@@ -15,18 +15,18 @@ export interface Order {
   [key: string]: string | number | undefined
 }
 
-export async function processOrders(batchSize = 50) {
-  const groupName = "order-group"
+const GROUP = "order-workers"
+
+export async function processOrders(batchSize = 10) {
   const consumerName = `worker-${process.pid}`
 
+  // XREADGROUP: 搶任務
   const streamData = (await redis.xreadgroup(
-    groupName,
+    GROUP,
     consumerName,
     [keys.ordersStream],
     [">"],
-    {
-      count: batchSize
-    }
+    { count: batchSize }
   )) as XReadResult
 
   if (!streamData || streamData.length === 0) {
@@ -34,7 +34,6 @@ export async function processOrders(batchSize = 50) {
   }
 
   const messages = streamData[0][1]
-
   if (messages.length === 0) {
     return { processed: 0, message: "No orders to process" }
   }
@@ -43,6 +42,7 @@ export async function processOrders(batchSize = 50) {
   const processedIds: string[] = []
 
   for (const message of messages) {
+    const messageId = message[0]
     const fields = message[1]
 
     const data: Record<string, string> = {}
@@ -53,6 +53,7 @@ export async function processOrders(batchSize = 50) {
     const { userId, productId, orderId, price, timestamp } = data
 
     if (!orderId || !userId || !productId) {
+      pipeline.xack(keys.ordersStream, GROUP, messageId)
       continue
     }
 
@@ -60,29 +61,31 @@ export async function processOrders(batchSize = 50) {
       id: orderId,
       userId,
       productId,
-      price: Number.parseFloat(price),
+      price: Number(price),
       status: "completed",
-      createdAt: Number.parseInt(timestamp),
+      createdAt: Number(timestamp),
       processedAt: Date.now(),
     }
 
-    const orderJson = JSON.stringify(order)
-    pipeline.set(keys.order(orderId), orderJson)
+    // 寫入實體資料
+    pipeline.json.set(keys.order(orderId), "$", order)
 
+    // 全域索引
     pipeline.zadd(keys.ordersIndex, { score: order.createdAt, member: orderId })
+
+    // 用戶索引
     pipeline.zadd(keys.userOrders(userId), { score: order.createdAt, member: orderId })
+
+    // 排行榜
     pipeline.zincrby(keys.leaderboard, order.price, productId)
+
+    // 標記該訊息完成（**不能 XDEL，否則 group 會壞掉**）
+    pipeline.xack(keys.ordersStream, GROUP, messageId)
 
     processedIds.push(orderId)
   }
 
   await pipeline.exec()
-
-  const messageIdsToAck = messages.map(([messageId]) => messageId);
-
-  if (messageIdsToAck.length > 0) {
-    await redis.xack(keys.ordersStream, groupName, ...(messageIdsToAck as string[]));
-  }
 
   return { processed: processedIds.length, orderIds: processedIds }
 }
