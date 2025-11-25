@@ -1,4 +1,10 @@
 import { Redis } from "@upstash/redis"
+import { HttpsAgent } from "agentkeepalive";
+
+const agent = new HttpsAgent({
+  keepAlive: true,
+  maxSockets: 50,
+});
 
 if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
   throw new Error("KV_REST_API_URL and KV_REST_API_TOKEN must be defined")
@@ -7,6 +13,7 @@ if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
 export const redis = new Redis({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN,
+  agent: agent
 })
 
 // Keys helper

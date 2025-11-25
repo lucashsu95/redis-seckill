@@ -32,11 +32,21 @@ redis.call("XADD", streamKey, "*",
 return 1
 `
 
+const soldOutCooldownMap = new Map<string, number>();
+const COOLDOWN_DURATION = 5000;
+
 export async function attemptSeckill(
   userId: string,
   productId: string,
   price: number,
 ): Promise<{ success: boolean; orderId?: string }> {
+
+  const cooldownUntil = soldOutCooldownMap.get(productId);
+  const now = Date.now();
+  if (cooldownUntil && now < cooldownUntil) {
+    return { success: false };
+  }
+
   const orderId = crypto.randomUUID()
   const timestamp = Date.now().toString()
 
@@ -46,11 +56,17 @@ export async function attemptSeckill(
     [userId, productId, orderId, price.toString(), timestamp],
   )
 
-  if (result === 1) {
+if (result === 1) {
+    if (soldOutCooldownMap.has(productId)) {
+        soldOutCooldownMap.delete(productId);
+    }
     return { success: true, orderId }
   }
 
-  return { success: false }
+  if (result === 0) {
+    soldOutCooldownMap.set(productId, Date.now() + COOLDOWN_DURATION);
+  }
+  return { success: false };
 }
 
 export async function getProductStock(productId: string): Promise<number> {

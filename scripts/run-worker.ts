@@ -13,9 +13,7 @@ async function runWorkerLoop() {
     try {
       const result = await processOrders(75)
 
-      if (result.processed > 0) {
-        console.log(`Processed ${result.processed} orders`)
-      } else {
+      if (result.processed <= 0) {
         await delay(500)
       }
     } catch (error) {

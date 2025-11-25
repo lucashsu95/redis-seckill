@@ -2,25 +2,23 @@ import http from "k6/http"
 import { check, sleep } from "k6"
 import { Rate } from "k6/metrics"
 
-// Custom metrics
 const errorRate = new Rate("errors")
 const successRate = new Rate("success")
 
 export const options = {
   stages: [
-    { duration: "10s", target: 50 }, // Ramp up to 50 users
-    { duration: "30s", target: 100 }, // Stay at 100 users
-    { duration: "20s", target: 200 }, // Spike to 200 users
-    { duration: "10s", target: 0 }, // Ramp down
+    { duration: "10s", target: 20 },  // 階段 1：緩慢上升到 20 個用戶
+    { duration: "10s", target: 100 },  // 階段 2：上升到 100 個用戶
+    { duration: "20s", target: 200 },  // 階段 3：上升到 200 個用戶
+    { duration: "10s", target: 0 },   // 階段 4：下降到 0 個用戶
   ],
   thresholds: {
-    http_req_duration: ["p(95)<500"], // 95% of requests should be below 500ms
-    http_req_failed: ["rate<0.99"], // 容許 409
-    errors: ["rate<0.1"], // Error rate should be below 10%
+    http_req_duration: ["p(95)<500"],
+    http_req_failed: ["rate<0.99"],
+    errors: ["rate<0.1"],
   },
 }
 
-// Replace with your actual deployment URL or localhost
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000"
 
 export function setup() {
@@ -61,7 +59,6 @@ export default function (data) {
 
   const res = http.post(`${BASE_URL}/api/seckill`, payload, params)
 
-  // Check response
   const success = check(res, {
     "status is 200 or 409": (r) => r.status === 200 || r.status === 409,
     "response has success field": (r) => {
@@ -83,6 +80,5 @@ export default function (data) {
     errorRate.add(1)
   }
 
-  // Small delay between requests
   sleep(Math.random() * 0.5 + 0.1)
 }

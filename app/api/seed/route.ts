@@ -10,28 +10,28 @@ export async function POST() {
         name: "2025 年遊戲筆記型電腦",
         price: 1299,
         image: "/modern-laptop-workspace.png",
-        stock: 50,
+        stock: 3000,
       },
       {
         id: "p2",
         name: "無線降噪耳機",
         price: 299,
         image: "/diverse-people-listening-headphones.png",
-        stock: 100,
+        stock: 3000,
       },
       {
         id: "p3",
         name: "2025 年智能手錶",
         price: 399,
         image: "/modern-smartwatch.png",
-        stock: 20,
+        stock: 2000,
       },
       {
         id: "p4",
         name: "4K 超級高清監視器",
         price: 450,
         image: "/computer-monitor.png",
-        stock: 5,
+        stock: 600,
       },
     ]
 
