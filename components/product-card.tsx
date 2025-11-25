@@ -59,15 +59,11 @@ export function ProductCard({ product }: ProductCardProps) {
       const data = await res.json()
 
       if (data.success) {
-        // Trigger worker processing in background (simulation) 如果沒有worker，可以注釋掉
-        fetch("/api/worker/process", { method: "POST" })
-
         toast.success("訂單已下單!", {
           description: `訂單 ID: ${data.orderId}`,
         })
         router.refresh()
       } else {
-        // Revert optimistic update on failure
         setOptimisticStock((prev) => prev + 1)
         toast.error("訂單下單失敗", {
           description: "庫存不足或系統忙碌。",

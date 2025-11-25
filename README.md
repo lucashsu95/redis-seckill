@@ -99,7 +99,8 @@ pnpm dev
 k6 run scripts/load-test.js
 
 # 針對已部署的 URL 進行測試
-BASE_URL=https://your-app.vercel.app k6 run scripts/load-test.js
+$env:BASE_URL="https://redis-seckill.vercel.app/"
+k6 run scripts/load-test.js
 ```
 
 **驗證重點：** 確保在任何情況下，庫存數量準確，且 `orders:global` (後台列表) 總數與 `leaderboard:sales` (排行榜) 總分必須相等。
