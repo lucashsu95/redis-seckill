@@ -9,20 +9,16 @@ import { processOrders } from "../lib/worker"
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 async function runWorkerLoop() {
-  console.log("🚀 Worker process started. Monitoring Redis Stream...")
-
   while (true) {
     try {
-      const result = await processOrders(10)
+      const result = await processOrders(75)
 
       if (result.processed > 0) {
-        console.log(`✅ Successfully processed ${result.processed} orders.`)
+        console.log(`Processed ${result.processed} orders`)
       } else {
         await delay(500)
       }
     } catch (error) {
-      console.error("❌ Worker encountered a critical error:", error)
-      // 發生錯誤時，等待久一點再嘗試重連
       await delay(2000)
     }
   }

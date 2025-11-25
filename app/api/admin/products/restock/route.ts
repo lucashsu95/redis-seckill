@@ -30,7 +30,6 @@ export async function POST(req: NextRequest) {
       newStock,
     })
   } catch (error) {
-    console.error("Restock error:", error)
     return NextResponse.json({ success: false, error: "Failed to restock product" }, { status: 500 })
   }
 }

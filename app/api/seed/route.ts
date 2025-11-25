@@ -3,8 +3,6 @@ import { NextResponse } from "next/server"
 
 export async function POST() {
   try {
-    // Clear existing data (optional, be careful in prod)
-    // await redis.flushdb()
 
     const products = [
       {
