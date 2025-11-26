@@ -7,7 +7,6 @@ import { DeleteOrderButton, CreateProductDialog, RestockButton, DeleteProductBut
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { VerifyButton } from "@/components/verify-button"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +25,6 @@ export default async function AdminPage() {
           </Button>
         </Link>
         <h1 className="text-3xl font-bold">管理員儀表板</h1>
-        <VerifyButton />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

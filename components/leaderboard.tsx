@@ -5,10 +5,9 @@ import { Trophy } from "lucide-react"
 export async function Leaderboard() {
   const [rankings, products] = await Promise.all([
     getLeaderboard(),
-    getProducts(), // Need this to map ID to Name
+    getProducts(),
   ])
 
-  // Create lookup map
   const productMap = new Map(products.map((p) => [p.id, p]))
 
   return (

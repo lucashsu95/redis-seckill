@@ -10,7 +10,6 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing orderId" }, { status: 400 })
     }
 
-    // Fetch the order details first
     const orderData = await redis.json.get(keys.order(orderId))
 
     if (!orderData) {
@@ -19,22 +18,16 @@ export async function DELETE(req: NextRequest) {
 
     const order = orderData as Order
 
-    // Use pipeline to delete order atomically
     const pipeline = redis.pipeline()
 
-    // Remove from global orders index
     pipeline.zrem(keys.ordersIndex, orderId)
 
-    // Remove from user's orders
     pipeline.zrem(keys.userOrders(order.userId), orderId)
 
-    // Remove from leaderboard (decrease revenue)
     pipeline.zincrby(keys.leaderboard, -order.price, order.productId)
 
-    // Delete the order JSON
     pipeline.json.del(keys.order(orderId))
 
-    // Restore stock (add back 1)
     pipeline.incr(keys.productStock(order.productId))
 
     await pipeline.exec()

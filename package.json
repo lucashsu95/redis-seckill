@@ -7,7 +7,9 @@
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",
-    "worker": "ts-node --project tsconfig.node.json scripts/run-worker.ts"
+    "worker": "ts-node --project tsconfig.node.json scripts/run-worker.ts",
+    "load-test": "k6 run scripts/load-test.js",
+    "reset": "ts-node --project tsconfig.node.json scripts/debug-reset.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

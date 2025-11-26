@@ -1,6 +1,5 @@
 import { redis, keys } from "./redis"
 
-// Lua script to atomically check stock, decrement, and push to stream
 const SECKILL_SCRIPT = `
 local stockKey = KEYS[1]
 local streamKey = KEYS[2]
@@ -10,17 +9,13 @@ local orderId = ARGV[3]
 local price = ARGV[4]
 local timestamp = ARGV[5]
 
--- Check stock
 local stock = tonumber(redis.call("GET", stockKey))
 if not stock or stock <= 0 then
     return 0
 end
 
--- Decrement stock
 redis.call("DECR", stockKey)
 
--- Add to stream for async processing
--- We pass all details needed for the worker to create the full order
 redis.call("XADD", streamKey, "*", 
     "userId", userId, 
     "productId", productId, 

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ShoppingBag, ShieldCheck } from "lucide-react"
 
-// Force dynamic to see stock updates on refresh
 export const dynamic = "force-dynamic"
 
 export default async function Home() {

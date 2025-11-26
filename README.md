@@ -56,13 +56,10 @@ sequenceDiagram
 
 ## 快速開始 (Quick Start)
 
-### 1\. 啟動環境 (使用 Docker Compose)
-
-確保已安裝 Docker 與 Docker Compose。
+### 1\. 啟動環境
 
 ```bash
-# 啟動 Redis 容器 (配置已包含 AOF 啟用)
-docker-compose up -d
+cp .env.local.example .env.local
 ```
 
 ### 2\. 安裝依賴 (使用 pnpm)

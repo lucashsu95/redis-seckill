@@ -9,7 +9,6 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Product ID required" }, { status: 400 })
     }
 
-    // Check if product exists
     const productKey = keys.product(productId)
     const exists = await redis.exists(productKey)
 
@@ -17,12 +16,10 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Product not found" }, { status: 404 })
     }
 
-    // Delete product data and stock atomically
     const pipeline = redis.pipeline()
     pipeline.del(productKey)
     pipeline.del(keys.productStock(productId))
 
-    // Also remove from leaderboard if exists
     pipeline.zrem(keys.leaderboard, productId)
 
     await pipeline.exec()
