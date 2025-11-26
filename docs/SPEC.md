@@ -19,8 +19,8 @@
 | Key Pattern | Type | 用途 | 內容範例 (JSON / Value) |
 | :--- | :--- | :--- | :--- |
 | `order:{orderId}` | **String** | **訂單主體** (不可變) | `{"id":"o101", "uid":"u1", "pid":"p1", "price":999, "ts":17100000}` |
-| `product:stock:{id}` | String | 庫存計數器 | `50` (整數) |
-| `product:info:{id}` | Hash | 商品靜態資訊 | `{"name": "iPhone 15", "img": "url..."}` |
+| `product:{id}:stock` | String | 庫存計數器 | `50` (整數) |
+| `product:{id}` | Hash | 商品靜態資訊 | `{"name": "iPhone 15", "img": "url..."}` |
 
 ### 2.2 索引資料 (Indexes) - 支援查詢與關聯
 
@@ -28,7 +28,7 @@
 
 | Key Pattern | Type | 用途 | 結構邏輯 |
 | :--- | :--- | :--- | :--- |
-| `orders:global` | **ZSet** | **全域訂單索引** (Admin 分頁用) | **Member**: `orderId`<br>**Score**: `Timestamp` (下單時間戳) |
+| `orders:index` | **ZSet** | **全域訂單索引** (Admin 分頁用) | **Member**: `orderId`<br>**Score**: `Timestamp` (下單時間戳) |
 | `user:{uid}:orders` | List | 用戶歷史訂單 | 存放 `orderId` 的列表 (LPUSH/LRANGE) |
 | `leaderboard:sales` | **ZSet** | **熱銷排行榜** | **Member**: `productId`<br>**Score**: `SalesCount` (銷量) |
 
@@ -40,7 +40,7 @@
 
   * **觸發點**: `POST /api/seckill`
   * **同步處理 (Redis Lua)**:
-    1.  檢查 `product:stock:{id}` 是否 \> 0。
+    1.  檢查 `product:{id}:stock` 是否 \> 0。
     2.  執行 `DECR` 扣庫存。
     3.  執行 `XADD` 將請求推入 Stream `orders:stream`。
   * **回傳**: 若成功，回傳 HTTP 200 與臨時 OrderID；失敗回傳 HTTP 409 (Sold Out)。
@@ -55,7 +55,7 @@ Worker 消費 Stream 訊息，將資料「實體化」並建立索引。此步�
     2.  開啟 `MULTI` (Transaction)。
     3.  **寫入實體**: `SET order:{id} {json}`。
     4.  **寫入用戶索引**: `LPUSH user:{uid}:orders {id}`。
-    5.  **寫入全域索引**: `ZADD orders:global {timestamp} {id}` (關鍵：供 Admin 分頁)。
+    5.  **寫入全域索引**: `ZADD orders:index {timestamp} {id}` (關鍵：供 Admin 分頁)。
     6.  **更新排行榜**: `ZINCRBY leaderboard:sales 1 {pid}`。
     7.  執行 `EXEC`。
     8.  `XACK` 確認訊息處理完畢。
@@ -64,7 +64,7 @@ Worker 消費 Stream 訊息，將資料「實體化」並建立索引。此步�
 
   * **訂單列表 (Pagination)**:
       * 利用 `ZSet` 的排序特性實現分頁。
-      * **Step 1**: `ZREVRANGE orders:global {start} {end}` 取得當前頁面的 10 個 `orderId`。
+      * **Step 1**: `ZREVRANGE orders:index {start} {end}` 取得當前頁面的 10 個 `orderId`。
       * **Step 2**: `MGET order:{id1} order:{id2} ...` 一次性拉取所有 JSON 資料。
       * **優勢**: 避免了 `KEYS *` 的全表掃描效能問題。
   * **編輯訂單 (Edit)**:
@@ -79,12 +79,12 @@ Worker 消費 Stream 訊息，將資料「實體化」並建立索引。此步�
     * **商品管理 (Product Management)**:
         * **新增商品 (Create)**: 
             * `JSON.SET product:{id} $ {json}` (商品資訊)
-            * `SET product:stock:{id} {stock}` (初始庫存)
+            * `SET product:{id}:stock {stock}` (初始庫存)
         * **補貨 (Restock)**:
-            * `INCRBY product:stock:{id} {amount}` (原子增加庫存)
+            * `INCRBY product:{id}:stock {amount}` (原子增加庫存)
         * **刪除商品 (Delete)**:
             * `DEL product:{id}`
-            * `DEL product:stock:{id}`
+            * `DEL product:{id}:stock`
 
 ### 3.4 排行榜 (Leaderboard)
 
@@ -104,28 +104,33 @@ sequenceDiagram
     participant Worker
     participant Redis
 
-    Note over Worker: 1. 解析 Stream 訊息
-    Worker->>Worker: 構建 JSON String
-    
-    Note over Worker: 2. 準備 Pipeline
+    Note over Worker: 1. 解析 Stream 訊息<br>並組成 order JSON 物件
+    Worker->>Worker: 構建 order 資料
+
+    Note over Worker: 2. 建立 Pipeline (MULTI)
     Worker->>Redis: MULTI
-    
+
     rect rgb(45, 45, 45)
-        Note right of Redis: 寫入實體數據
-        Redis->>Redis: SET order:101 "{\"id\":\"101\", \"amt\":999...}"
-        
-        Note right of Redis: 建立查詢索引
-        Redis->>Redis: LPUSH user:Alice:orders "101"
-        Redis->>Redis: ZADD orders:global 1716537600 "101"
-        
-        Note right of Redis: 更新業務統計
-        Redis->>Redis: ZINCRBY leaderboard:sales 1 "item_A"
+        Note right of Redis: 寫入訂單 JSON
+        Redis->>Redis: JSON.SET order:{orderId} "$" {order}
+
+        Note right of Redis: 建立全域排序索引
+        Redis->>Redis: ZADD orders:index {createdAt} {orderId}
+
+        Note right of Redis: 建立使用者訂單索引
+        Redis->>Redis: ZADD user:{userId}:orders {createdAt} {orderId}
+
+        Note right of Redis: 對每個 productId 累加銷售額（整批 loop 最後執行）
+        Redis->>Redis: ZINCRBY leaderboard {totalSales} {productId}
+
+        Note right of Redis: Stream Ack（在 pipeline 裡）
+        Redis->>Redis: XACK orders:stream {group} {msgId}
     end
-    
+
     Worker->>Redis: EXEC
     Redis-->>Worker: OK (Transaction Committed)
-    
-    Worker->>Redis: XACK orders:stream group1 msg_id
+
+    Note over Worker: 回傳 processed 訂單數與 IDs
 ```
 
 -----
@@ -135,22 +140,6 @@ sequenceDiagram
 | 方法 | 路徑 | 描述 | Redis 關鍵指令 |
 | :--- | :--- | :--- | :--- |
 | **POST** | `/api/seckill` | 用戶搶購 | `EVALSHA` |
-| **GET** | `/api/orders` | 用戶歷史訂單 | `LRANGE` + `MGET` |
-| **GET** | `/api/admin/orders` | **後台訂單列表** (分頁) | `ZREVRANGE` + `MGET` |
-| **PUT** | `/api/admin/orders` | **後台編輯訂單** | `SET` (Overwrite JSON) |
-| **DELETE** | `/api/admin/orders` | **後台刪除訂單** | `DEL`, `ZREM`, `LREM` (Transaction) |
 | **GET** | `/api/products` | 商品列表 | `JSON.GET` / `SCAN` |
 | **POST** | `/api/seed` | 初始化數據 | `JSON.SET`, `SET` (Pipeline) |
-| **POST** | `/api/admin/products/create` | **後台新增商品** | `JSON.SET`, `SET` |
-| **POST** | `/api/admin/products/restock` | **後台商品補貨** | `INCRBY` |
-| **POST** | `/api/admin/products/delete` | **後台刪除商品** | `DEL` |
-
------
-
-## 6\. 非功能性需求 (Non-Functional Requirements)
-
-1.  **資料一致性**: 使用 Redis Transaction (`MULTI`/`EXEC`) 確保「訂單本體」與「索引」的狀態一致。
-2.  **持久化**: 依賴 Upstash 的託管持久化機制，確保在重啟後索引與數據必須吻合。
-3.  **效能目標**:
-      * 秒殺介面回應時間 \< 50ms。
-      * 後台列表查詢時間 \< 20ms (利用 MGET)。
+| **POST** | `/api/worker/process` | Worker 處理 Stream 訊息 | `JSON.SET`, `SET`, `LPUSH`, `ZINCRBY` (Pipeline) |

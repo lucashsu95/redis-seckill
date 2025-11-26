@@ -27,7 +27,7 @@
 | 功能 | Redis 結構 | Key Pattern | 設計邏輯 |
 | :--- | :--- | :--- | :--- |
 | **訂單實體** | `String` | `order:{id}` | 儲存 JSON 化的訂單內容 |
-| **後台分頁** | `ZSet` | `orders:global` | Score=時間戳，用於管理員按時間倒序分頁 |
+| **後台分頁** | `ZSet` | `orders:index` | Score=時間戳，用於管理員按時間倒序分頁 |
 | **用戶歷史** | `List` | `user:{uid}:orders` | 儲存該用戶的訂單 ID 列表 |
 | **熱銷排行** | `ZSet` | `leaderboard:sales` | Score=銷量，用於實時生成排行榜 |
 
@@ -45,7 +45,6 @@ sequenceDiagram
     
     par 平行寫入 (Pipeline)
         Redis->>Redis: SET order:{id} {json}
-        Redis->>Redis: ZADD orders:global {timestamp} {id}
         Redis->>Redis: LPUSH user:{uid}:orders {id}
         Redis->>Redis: ZINCRBY leaderboard:sales 1 {pid}
     end
@@ -76,7 +75,7 @@ curl -X POST http://localhost:3000/api/seed
 本專案使用 pnpm 作為套件管理器。
 
 ```bash
-pnpm install
+pnpm i
 ```
 
 ### 4. 啟動後端 Worker (Stream Consumer)
@@ -109,7 +108,7 @@ $env:BASE_URL="https://redis-seckill.vercel.app/"
 k6 run scripts/load-test.js
 ```
 
-**驗證重點：** 確保在任何情況下，庫存數量準確，且 `orders:global` (後台列表) 總數與 `leaderboard:sales` (排行榜) 總分必須相等。
+**驗證重點：** 確保在任何情況下，庫存數量準確，且 `orders:index` (後台列表) 總數與 `leaderboard:sales` (排行榜) 總分必須相等。
 
 ### 重置環境 (Reset)
 
@@ -123,12 +122,10 @@ npx tsx scripts/debug-reset.ts
 
 更值得探索的方向：Worker 失敗後的彌補機制 (Compensation)
 
-必須建立一個明確的機制來處理 Stream 中永遠無法被 XACK 的訊息（即：DLQ/重試失敗）。
+必須建立一個明確的機制來處理 `Stream` 中永遠無法被 `XACK` 的訊息（即：DLQ/重試失敗）。
 
 當訊息被確認為無法處理（例如：重試 N 次失敗）時，你需要執行補償事務 (Compensation Transaction)：
 
-將該訊息隔離到 DLQ。
-
-執行庫存回滾： 找出該訂單扣減的 productId，並對 product:stock:{id} 執行 INCR 操作，將庫存加回去。
-
-通知用戶（例如通過郵件或簡訊）：「由於系統錯誤，您的訂單被取消，庫存已釋放。」
+1. 將該訊息隔離到 DLQ。
+2. 執行庫存回滾： 找出該訂單扣減的 productId，並對 `product:stock:{id}` 執行 `INCR` 操作，將庫存加回去。
+3. 通知用戶（例如通過郵件或簡訊）：「由於系統錯誤，您的訂單被取消，庫存已釋放。」

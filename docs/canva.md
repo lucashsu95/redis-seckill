@@ -54,7 +54,7 @@
   * **Redis 取代 SQL 的策略**：
       * **實體儲存**：使用 `String` 結構儲存 `JSON` 字串 (`order:{id}`)。
       * **查詢優化**：不使用 `KEYS *` (全表掃描)，而是模擬 SQL 索引：
-          * **分頁查詢 (Pagination)**：建立 `ZSet` (`orders:global`)，Score = Timestamp。
+          * **分頁查詢 (Pagination)**：建立 `ZSet` (`orders:index`)，Score = Timestamp。
           * **操作**：使用 `ZREVRANGE` 取出 ID 列表，再用 `MGET` 一次拉取所有訂單內容。
       * **優勢**：即使訂單量達到百萬級，分頁查詢依然維持 $O(\log N)$ 的高效能，遠勝 SQL 的 `OFFSET` 語法。
 
@@ -84,13 +84,11 @@
 #### 頁面 6: 後台管理與資料一致性 (Admin & Consistency)
 
   * **CMS 功能亮點**：
-      * 支援全域訂單分頁瀏覽 (Pagination)。
       * 支援 JSON 內容直接編輯 (Override)。
   * **複雜資料處理**：
       * **級聯刪除 (Cascading Delete)**：當管理員刪除一張訂單時，Redis 事務會同時清理：
         1.  `DEL order:{id}` (實體)
-        2.  `ZREM orders:global {id}` (全域索引)
-        3.  `LREM user:{uid}:orders` (用戶索引)
+        2.  `LREM user:{uid}:orders` (用戶索引)
       * 這確保了系統不會出現「有索引但找不到資料」的 Dangling Pointer 問題。
 
 #### 頁面 7: 參考文獻與雲端資源 (References)
