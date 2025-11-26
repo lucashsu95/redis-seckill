@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { getUserOrdersAction } from "@/lib/actions/order.actions"
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
@@ -18,16 +19,11 @@ export default function OrdersPage() {
       return
     }
 
-    // Since we don't have a public API for getting user orders yet,
-    // let's create a server action or just a quick API route.
-    // For now, I'll add an API route.
-    // Actually, I missed creating the user orders API.
-    // I will fetch from a new endpoint /api/user/orders?userId=...
-
-    fetch(`/api/user/orders?userId=${userId}`)
-      .then((res) => res.json())
+    getUserOrdersAction(userId)
       .then((data) => {
-        if (data.orders) setOrders(data.orders)
+        if (data.success && data.orders) {
+          setOrders(data.orders)
+        }
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false))
