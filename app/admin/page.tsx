@@ -7,14 +7,23 @@ import { DeleteOrderButton, CreateProductDialog, RestockButton, DeleteProductBut
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { AdminPagination } from "@/components/admin-pagination"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminPage() {
+export default async function AdminPage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const searchParams = await props.searchParams
+  const page = typeof searchParams.page === "string" ? Number.parseInt(searchParams.page) : 1
+  const limit = 20
+
   const [products, { orders, total }] = await Promise.all([
     getProducts(),
-    getGlobalOrders(1, 50),
+    getGlobalOrders(page, limit),
   ])
+
+  const totalPages = Math.ceil(total / limit)
 
   return (
     <div className="container mx-auto py-10 px-4">
@@ -57,9 +66,9 @@ export default async function AdminPage() {
       </div>
 
       <Tabs defaultValue="products" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="products" className="text-lg cursor-pointer px-2">產品</TabsTrigger>
-          <TabsTrigger value="orders" className="text-lg cursor-pointer px-2">訂單</TabsTrigger>
+        <TabsList className="mb-2">
+          <TabsTrigger value="products" className="text-md font-bold cursor-pointer px-4 py-2">產品</TabsTrigger>
+          <TabsTrigger value="orders" className="text-md font-bold cursor-pointer px-4 py-2">訂單</TabsTrigger>
         </TabsList>
 
         <TabsContent value="products">
@@ -146,7 +155,7 @@ export default async function AdminPage() {
                 <TableBody>
                   {orders.map((order) => (
                     <TableRow key={order.id}>
-                      <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-mono text-xs">{order.id}</TableCell>
                       <TableCell className="text-xs">{order.userId}</TableCell>
                       <TableCell className="text-xs">{order.productId}</TableCell>
                       <TableCell>${order.price}</TableCell>
@@ -172,6 +181,10 @@ export default async function AdminPage() {
                   )}
                 </TableBody>
               </Table>
+              
+              {totalPages > 1 && (
+                <AdminPagination currentPage={page} totalPages={totalPages} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
