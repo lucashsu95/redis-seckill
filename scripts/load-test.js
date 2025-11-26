@@ -32,7 +32,7 @@ export function setup() {
   const productsRes = http.get(`${BASE_URL}/api/products`)
   const products = JSON.parse(productsRes.body)
 
-  return { products: products }
+  return { products }
 }
 
 export default function (data) {
@@ -59,7 +59,7 @@ export default function (data) {
 
   const res = http.post(`${BASE_URL}/api/seckill`, payload, params)
 
-  const success = check(res, {
+  check(res, {
     "status is 200 or 409": (r) => r.status === 200 || r.status === 409,
     "response has success field": (r) => {
       try {

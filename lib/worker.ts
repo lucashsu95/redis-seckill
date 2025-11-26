@@ -17,10 +17,9 @@ export interface Order {
 
 const GROUP = "order-workers"
 
-export async function processOrders(batchSize = 10) {
+export async function processOrders(batchSize = 200) {
   const consumerName = `worker-${process.pid}`
 
-  // XREADGROUP: 搶任務
   const streamData = (await redis.xreadgroup(
     GROUP,
     consumerName,
@@ -40,11 +39,12 @@ export async function processOrders(batchSize = 10) {
 
   const pipeline = redis.pipeline()
   const processedIds: string[] = []
+  const productSalesMap = new Map<string, number>();
 
   for (const message of messages) {
     const messageId = message[0]
     const fields = message[1]
-
+    
     const data: Record<string, string> = {}
     for (let i = 0; i < fields.length; i += 2) {
       data[fields[i]] = fields[i + 1]
@@ -67,22 +67,22 @@ export async function processOrders(batchSize = 10) {
       processedAt: Date.now(),
     }
 
-    // 寫入實體資料
     pipeline.json.set(keys.order(orderId), "$", order)
 
-    // 全域索引
     pipeline.zadd(keys.ordersIndex, { score: order.createdAt, member: orderId })
 
-    // 用戶索引
     pipeline.zadd(keys.userOrders(userId), { score: order.createdAt, member: orderId })
 
-    // 排行榜
-    pipeline.zincrby(keys.leaderboard, order.price, productId)
+    const currentSales = productSalesMap.get(productId) || 0;
+    productSalesMap.set(productId, currentSales + order.price);
 
-    // 標記該訊息完成（**不能 XDEL，否則 group 會壞掉**）
     pipeline.xack(keys.ordersStream, GROUP, messageId)
 
     processedIds.push(orderId)
+  }
+
+  for (const [productId, totalSales] of productSalesMap.entries()) {
+    pipeline.zincrby(keys.leaderboard, totalSales, productId)
   }
 
   await pipeline.exec()

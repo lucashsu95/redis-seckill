@@ -1,5 +1,5 @@
 import { config } from "dotenv"
-config()
+config({ path: ".env.local" })
 import { redis, keys } from "../lib/redis"
 
 import { processOrders } from "../lib/worker"
@@ -9,7 +9,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 async function runWorkerLoop() {
   while (true) {
     try {
-      const result = await processOrders(75)
+      const result = await processOrders(400)
 
       if (result.processed <= 0) {
         await delay(500)
