@@ -1,19 +1,9 @@
 import { redis, keys } from "./redis"
+import { Order } from "./types"
 
 type StreamEntry = [string, string[]]
 type StreamResult = [string, StreamEntry[]]
 type XReadResult = StreamResult[] | null
-
-export interface Order {
-  id: string
-  userId: string
-  productId: string
-  price: number
-  status: "pending" | "completed" | "failed"
-  createdAt: number
-  processedAt?: number
-  [key: string]: string | number | undefined
-}
 
 const GROUP = "order-workers"
 

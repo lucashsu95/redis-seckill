@@ -31,7 +31,6 @@
 | `orders:global` | **ZSet** | **全域訂單索引** (Admin 分頁用) | **Member**: `orderId`<br>**Score**: `Timestamp` (下單時間戳) |
 | `user:{uid}:orders` | List | 用戶歷史訂單 | 存放 `orderId` 的列表 (LPUSH/LRANGE) |
 | `leaderboard:sales` | **ZSet** | **熱銷排行榜** | **Member**: `productId`<br>**Score**: `SalesCount` (銷量) |
-| `seckill:users:{pid}`| Set | 防重複購買名單 | Member: `userId` |
 
 -----
 
@@ -41,11 +40,9 @@
 
   * **觸發點**: `POST /api/seckill`
   * **同步處理 (Redis Lua)**:
-    1.  檢查 `seckill:users:{pid}` 是否包含 `userId` (防重複)。
-    2.  檢查 `product:stock:{id}` 是否 \> 0。
-    3.  執行 `DECR` 扣庫存。
-    4.  執行 `SADD` 寫入購買名單。
-    5.  執行 `XADD` 將請求推入 Stream `orders:stream`。
+    1.  檢查 `product:stock:{id}` 是否 \> 0。
+    2.  執行 `DECR` 扣庫存。
+    3.  執行 `XADD` 將請求推入 Stream `orders:stream`。
   * **回傳**: 若成功，回傳 HTTP 200 與臨時 OrderID；失敗回傳 HTTP 409 (Sold Out)。
 
 ### 3.2 異步寫入與索引維護 (Worker Flow) - Persistence

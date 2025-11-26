@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { Trash2, Plus, Package } from "lucide-react"
 import { toast } from "sonner"
+import { deleteOrderAction } from "@/lib/actions/order.actions"
+import { deleteProductAction } from "@/lib/actions/product.actions"
 
 export function DeleteOrderButton({ orderId }: { orderId: string }) {
   const [open, setOpen] = useState(false)
@@ -25,15 +27,9 @@ export function DeleteOrderButton({ orderId }: { orderId: string }) {
   const handleDelete = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/admin/orders/delete", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      })
+      const result = await deleteOrderAction(orderId)
 
-      const data = await res.json()
-
-      if (data.success) {
+      if (result.success) {
         toast.success("訂單已刪除", {
           description: "訂單已刪除並恢復庫存。",
         })
@@ -41,7 +37,7 @@ export function DeleteOrderButton({ orderId }: { orderId: string }) {
         router.refresh()
       } else {
         toast.error("Error", {
-          description: data.error || "刪除訂單失敗",
+          description: result.error || "刪除訂單失敗",
         })
       }
     } catch (error) {
@@ -70,7 +66,7 @@ export function DeleteOrderButton({ orderId }: { orderId: string }) {
             取消
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-            {loading ? "Deleting..." : "Delete"}
+            {loading ? "刪除中..." : "刪除訂單"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -295,15 +291,9 @@ export function DeleteProductButton({ productId, productName }: { productId: str
   const handleDelete = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/admin/products/delete", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
-      })
+      const result = await deleteProductAction(productId)
 
-      const data = await res.json()
-
-      if (data.success) {
+      if (result.success) {
         toast.success("商品已刪除", {
           description: `${productName} 已從庫存中刪除。`,
         })
@@ -311,7 +301,7 @@ export function DeleteProductButton({ productId, productName }: { productId: str
         router.refresh()
       } else {
         toast.error("Error", {
-          description: data.error || "刪除商品失敗",
+          description: result.error || "刪除商品失敗",
         })
       }
     } catch (error) {

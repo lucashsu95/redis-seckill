@@ -1,7 +1,7 @@
 import { redis, keys } from "./redis"
-import type { Order } from "./worker"
-import type { RedisJsonMgetResponse } from "./redis-types"
-import { extractJsonValues } from "./redis-types"
+import type { Order } from "./types"
+import type { RedisJsonMgetResponse } from "./types"
+import { extractJsonValues } from "./types"
 
 export interface Product {
   id: string
@@ -85,4 +85,43 @@ export async function getLeaderboard(): Promise<{ productId: string; revenue: nu
   }
 
   return leaderboard
+}
+
+export async function deleteOrder(orderId: string) {
+  const orderData = await redis.json.get(keys.order(orderId))
+
+  if (!orderData) {
+    throw new Error("Order not found")
+  }
+
+  const order = orderData as Order
+  const pipeline = redis.pipeline()
+
+  pipeline.zrem(keys.ordersIndex, orderId)
+  pipeline.zrem(keys.userOrders(order.userId), orderId)
+  pipeline.zincrby(keys.leaderboard, -order.price, order.productId)
+  pipeline.json.del(keys.order(orderId))
+  pipeline.incr(keys.productStock(order.productId))
+
+  await pipeline.exec()
+  
+  return true
+}
+
+export async function deleteProduct(productId: string) {
+  const productKey = keys.product(productId)
+  const exists = await redis.exists(productKey)
+
+  if (!exists) {
+    throw new Error("Product not found")
+  }
+
+  const pipeline = redis.pipeline()
+  pipeline.del(productKey)
+  pipeline.del(keys.productStock(productId))
+  pipeline.zrem(keys.leaderboard, productId)
+
+  await pipeline.exec()
+
+  return true
 }
