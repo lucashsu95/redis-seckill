@@ -6,7 +6,7 @@
 
 ### 1.2 技術架構原則
 
-  - **Persistence Strategy**: 強制啟用 **Redis AOF (Append Only File)**，策略設為 `appendfsync everysec`，確保資料持久性。
+  - **Persistence Strategy**: 採用 **Upstash Redis** 託管服務，利用其內建的 Multi-tier Storage 機制確保資料持久性（Persistence by Default），無需手動維護 AOF 設定。
   - **Data Modeling**: 採用 **JSON String Store** 搭配 **Manual Indexing** (手動維護索引) 策略。
   - **Concurrency Control**: 核心庫存扣減依賴 **Lua Script**，寫入壓力透過 **Redis Streams** 異步緩衝。
 
@@ -153,7 +153,7 @@ sequenceDiagram
 ## 6\. 非功能性需求 (Non-Functional Requirements)
 
 1.  **資料一致性**: 使用 Redis Transaction (`MULTI`/`EXEC`) 確保「訂單本體」與「索引」的狀態一致。
-2.  **持久化**: 依賴 AOF 機制，容忍最多 1 秒的數據丟失 (Everysec policy)，但在重啟後索引與數據必須吻合。
+2.  **持久化**: 依賴 Upstash 的託管持久化機制，確保在重啟後索引與數據必須吻合。
 3.  **效能目標**:
       * 秒殺介面回應時間 \< 50ms。
       * 後台列表查詢時間 \< 20ms (利用 MGET)。

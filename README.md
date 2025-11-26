@@ -8,7 +8,7 @@
 
   * **JSON Document Store**: 訂單實體資料以 `JSON String` 格式儲存，利用 `MGET` 指令實現批次、O(1) 的極速讀取。
   * **Manual Indexing (手動索引)**: 透過維護 `ZSet` (Sorted Set) 與 `List` 等 Redis 集合，模擬 SQL 的索引行為，成功實現了複雜的後台分頁查詢與資料關聯檢索。
-  * **持久性 (Persistence)**: 強制啟用 **Redis AOF (Append Only File)** 機制，確保服務重啟後，所有訂單記錄與庫存數據不丟失。
+  * **持久性 (Persistence)**: 本專案使用 **Upstash Redis**，其底層採用多層次儲存架構（記憶體 + Block Storage），預設即提供強大的資料持久性，確保服務重啟後訂單記錄與庫存數據不丟失，無需手動配置 AOF。
 
 ### 2\. 高併發與原子性控制
 
