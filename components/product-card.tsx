@@ -28,7 +28,6 @@ export function ProductCard({ product }: ProductCardProps) {
   }, [product.stock])
 
   useEffect(() => {
-    // simple user persistence
     let stored = localStorage.getItem("seckill_user_id")
     if (!stored) {
       stored = `user_${Math.random().toString(36).substring(2, 9)}`
@@ -55,6 +54,11 @@ export function ProductCard({ product }: ProductCardProps) {
           price: product.price,
         }),
       })
+
+      // 沒有 worker 的情況下，直接處理訂單
+      // await fetch("/api/worker/process", {
+      //   method: "POST",
+      // })
 
       const data = await res.json()
 

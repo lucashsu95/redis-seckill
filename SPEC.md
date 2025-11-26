@@ -6,7 +6,6 @@
 
 ### 1.2 技術架構原則
 
-  - **Primary Data Store**: **Redis**。所有資料落地皆在 Redis。
   - **Persistence Strategy**: 強制啟用 **Redis AOF (Append Only File)**，策略設為 `appendfsync everysec`，確保資料持久性。
   - **Data Modeling**: 採用 **JSON String Store** 搭配 **Manual Indexing** (手動維護索引) 策略。
   - **Concurrency Control**: 核心庫存扣減依賴 **Lua Script**，寫入壓力透過 **Redis Streams** 異步緩衝。
@@ -79,6 +78,16 @@ Worker 消費 Stream 訊息，將資料「實體化」並建立索引。此步�
         1.  `DEL order:{id}` (實體)
         2.  `ZREM orders:global {id}` (全域索引)
         3.  `LREM user:{uid}:orders 0 {id}` (用戶索引)
+    
+    * **商品管理 (Product Management)**:
+        * **新增商品 (Create)**: 
+            * `JSON.SET product:{id} $ {json}` (商品資訊)
+            * `SET product:stock:{id} {stock}` (初始庫存)
+        * **補貨 (Restock)**:
+            * `INCRBY product:stock:{id} {amount}` (原子增加庫存)
+        * **刪除商品 (Delete)**:
+            * `DEL product:{id}`
+            * `DEL product:stock:{id}`
 
 ### 3.4 排行榜 (Leaderboard)
 
@@ -134,6 +143,11 @@ sequenceDiagram
 | **PUT** | `/api/admin/orders` | **後台編輯訂單** | `SET` (Overwrite JSON) |
 | **DELETE** | `/api/admin/orders` | **後台刪除訂單** | `DEL`, `ZREM`, `LREM` (Transaction) |
 | **GET** | `/api/leaderboard` | 即時排行榜 | `ZREVRANGE ... WITHSCORES` |
+| **GET** | `/api/products` | 商品列表 | `JSON.GET` / `SCAN` |
+| **POST** | `/api/seed` | 初始化數據 | `JSON.SET`, `SET` (Pipeline) |
+| **POST** | `/api/admin/products/create` | **後台新增商品** | `JSON.SET`, `SET` |
+| **POST** | `/api/admin/products/restock` | **後台商品補貨** | `INCRBY` |
+| **POST** | `/api/admin/products/delete` | **後台刪除商品** | `DEL` |
 
 -----
 
