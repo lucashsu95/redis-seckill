@@ -142,7 +142,6 @@ sequenceDiagram
 | **GET** | `/api/admin/orders` | **後台訂單列表** (分頁) | `ZREVRANGE` + `MGET` |
 | **PUT** | `/api/admin/orders` | **後台編輯訂單** | `SET` (Overwrite JSON) |
 | **DELETE** | `/api/admin/orders` | **後台刪除訂單** | `DEL`, `ZREM`, `LREM` (Transaction) |
-| **GET** | `/api/leaderboard` | 即時排行榜 | `ZREVRANGE ... WITHSCORES` |
 | **GET** | `/api/products` | 商品列表 | `JSON.GET` / `SCAN` |
 | **POST** | `/api/seed` | 初始化數據 | `JSON.SET`, `SET` (Pipeline) |
 | **POST** | `/api/admin/products/create` | **後台新增商品** | `JSON.SET`, `SET` |
