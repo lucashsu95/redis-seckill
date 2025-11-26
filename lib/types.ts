@@ -18,3 +18,11 @@ export interface Order {
   processedAt?: number
   [key: string]: string | number | undefined
 }
+
+export interface CreateProductInput {
+  id: string
+  name: string
+  price: number
+  image?: string
+  stock: number
+}

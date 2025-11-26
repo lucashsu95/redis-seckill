@@ -1,5 +1,5 @@
 import { redis, keys } from "./redis"
-import type { Order } from "./types"
+import type { CreateProductInput, Order } from "./types"
 import type { RedisJsonMgetResponse } from "./types"
 import { extractJsonValues } from "./types"
 
@@ -124,4 +124,57 @@ export async function deleteProduct(productId: string) {
   await pipeline.exec()
 
   return true
+}
+
+export async function createProduct(input: CreateProductInput) {
+  const { id, name, price, image, stock } = input
+
+  if (!id || !name || price === undefined || stock === undefined) {
+    throw new Error("Missing required fields")
+  }
+
+  // Check if product already exists
+  const existing = await redis.exists(keys.product(id))
+  if (existing) {
+    throw new Error("Product ID already exists")
+  }
+
+  const product = {
+    id,
+    name,
+    price: Number(price),
+    image: image || "/placeholder.svg?height=400&width=400",
+    stock: Number(stock),
+  }
+
+  const pipeline = redis.pipeline()
+
+  pipeline.json.set(keys.product(id), "$", product)
+
+  pipeline.set(keys.productStock(id), stock)
+
+  await pipeline.exec()
+
+  return product
+}
+
+export async function restockProduct(productId: string, amount: number) {
+  if (!productId || amount === undefined) {
+    throw new Error("Missing required fields")
+  }
+
+  const addAmount = Number(amount)
+
+  if (addAmount <= 0) {
+    throw new Error("Amount must be positive")
+  }
+
+  const exists = await redis.exists(keys.product(productId))
+  if (!exists) {
+    throw new Error("Product not found")
+  }
+
+  const newStock = await redis.incrby(keys.productStock(productId), addAmount)
+
+  return newStock
 }

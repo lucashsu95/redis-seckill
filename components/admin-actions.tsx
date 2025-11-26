@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation"
 import { Trash2, Plus, Package } from "lucide-react"
 import { toast } from "sonner"
 import { deleteOrderAction } from "@/lib/actions/order.actions"
-import { deleteProductAction } from "@/lib/actions/product.actions"
+import { createProductAction, deleteProductAction, restockProductAction } from "@/lib/actions/product.actions"
 
 export function DeleteOrderButton({ orderId }: { orderId: string }) {
   const [open, setOpen] = useState(false)
@@ -80,9 +80,9 @@ export function CreateProductDialog() {
   const [formData, setFormData] = useState({
     id: "",
     name: "",
-    price: "",
+    price: 0,
     image: "",
-    stock: "",
+    stock: 0,
   })
   const router = useRouter()
 
@@ -96,24 +96,18 @@ export function CreateProductDialog() {
 
     setLoading(true)
     try {
-      const res = await fetch("/api/admin/products/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
+      const result = await createProductAction(formData)
 
-      const data = await res.json()
-
-      if (data.success) {
+      if (result.success) {
         toast.success("商品已新增", {
           description: `${formData.name} 已加入庫存。`,
         })
         setOpen(false)
-        setFormData({ id: "", name: "", price: "", image: "", stock: "" })
+        setFormData({ id: "", name: "", price: 0, image: "", stock: 0 })
         router.refresh()
       } else {
         toast.error("Error", {
-          description: data.error || "新增商品失敗",
+          description: result.error || "新增商品失敗",
         })
       }
     } catch (error) {
@@ -163,7 +157,7 @@ export function CreateProductDialog() {
               id="price"
               type="number"
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
               placeholder="99"
             />
           </div>
@@ -173,7 +167,7 @@ export function CreateProductDialog() {
               id="stock"
               type="number"
               value={formData.stock}
-              onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
               placeholder="100"
             />
           </div>
@@ -216,24 +210,18 @@ export function RestockButton({ productId }: { productId: string }) {
 
     setLoading(true)
     try {
-      const res = await fetch("/api/admin/products/restock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, amount: Number(amount) }),
-      })
+      const result = await restockProductAction(productId, Number(amount))
 
-      const data = await res.json()
-
-      if (data.success) {
+      if (result.success) {
         toast.success("庫存已更新", {
-          description: `已新增 ${amount} 個。新庫存: ${data.newStock}`,
+          description: `已新增 ${amount} 個。新庫存: ${result.newStock}`,
         })
         setOpen(false)
         setAmount("")
         router.refresh()
       } else {
         toast.error("Error", {
-          description: data.error || "補貨失敗",
+          description: result.error || "補貨失敗",
         })
       }
     } catch (error) {
