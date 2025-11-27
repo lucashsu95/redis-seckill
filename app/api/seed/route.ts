@@ -38,7 +38,7 @@ export async function POST() {
     const pipeline = redis.pipeline()
 
     for (const p of products) {
-      pipeline.json.set(keys.product(p.id), "$", p)
+      pipeline.call("JSON.SET", keys.product(p.id), "$", JSON.stringify(p))
       pipeline.set(keys.productStock(p.id), p.stock)
     }
 

@@ -1,4 +1,4 @@
-export const runtime = 'edge';
+
 
 import { attemptSeckill } from "@/lib/seckill"
 import { type NextRequest, NextResponse } from "next/server"

@@ -8,7 +8,7 @@
 
   * **JSON Document Store**: 訂單實體資料以 `JSON String` 格式儲存，利用 `MGET` 指令實現批次、O(1) 的極速讀取。
   * **Manual Indexing (手動索引)**: 透過維護 `ZSet` (Sorted Set) 與 `List` 等 Redis 集合，模擬 SQL 的索引行為，成功實現了複雜的後台分頁查詢與資料關聯檢索。
-  * **持久性 (Persistence)**: 本專案使用 **Upstash Redis**，其底層採用多層次儲存架構（記憶體 + Block Storage），預設即提供強大的資料持久性，確保服務重啟後訂單記錄與庫存數據不丟失，無需手動配置 AOF。
+  * **持久性 (Persistence)**: 本專案使用 **Docker Redis** 搭配 **AOF (Append Only File)** 持久化策略，每秒同步一次寫入操作至磁碟，確保服務重啟後訂單記錄與庫存數據不丟失。資料儲存於本地 `redis-data/` 目錄。
 
 ### 2\. 高併發與原子性控制
 
@@ -55,67 +55,49 @@ sequenceDiagram
 
 ## 快速開始 (Quick Start)
 
-### 1. 啟動環境
+### 前置要求
+
+- **Node.js** 18+ 與 **pnpm**
+- **Docker** 與 **Docker Compose**（用於運行 Redis）
+
+### 1. 啟動 Redis
+
+使用 Docker Compose 啟動本地 Redis 實例：
 
 ```bash
-cp .env.local.example .env.local
+pnpm docker:up
 ```
 
-### 2. 初始化數據 (Seed Data)
-
-首次啟動前，請先寫入預設商品數據：
+### 停止 Redis
 
 ```bash
-# 呼叫 API 進行初始化
-curl -X POST http://localhost:3000/api/seed
+pnpm docker:down
 ```
 
-### 3. 安裝依賴 (使用 pnpm)
-
-本專案使用 pnpm 作為套件管理器。
+### 查看 Redis 日誌
 
 ```bash
-pnpm i
+pnpm docker:logs
 ```
 
-### 4. 啟動後端 Worker (Stream Consumer)
-
-Worker 負責處理 Stream 訊息並將資料寫入多個 Redis Key 以維護索引。
+### 連接 Redis CLI
 
 ```bash
-pnpm worker
+docker exec -it redis-seckill redis-cli
 ```
 
-### 5. 啟動 Next.js 應用 (Frontend & API)
+### 數據備份
+
+Redis 數據儲存於 `redis-data/` 目錄，可直接備份此目錄：
 
 ```bash
-pnpm dev
-```
+# 備份
+cp -r redis-data/ redis-data-backup/
 
-  * **前台搶購頁面**: [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)
-  * **後台管理系統**: [http://localhost:3000/admin](https://www.google.com/search?q=http://localhost:3000/admin)
-
-## 壓力測試與驗證 (Testing)
-
-以 `k6` 進行壓力測試，驗證系統在高併發下的穩定性與資料一致性。
-
-```bash
-# 針對本機進行測試
-k6 run scripts/load-test.js
-
-# 針對已部署的 URL 進行測試
-$env:BASE_URL="https://redis-seckill.vercel.app/"
-k6 run scripts/load-test.js
-```
-
-**驗證重點：** 確保在任何情況下，庫存數量準確，且 `orders:index` (後台列表) 總數與 `leaderboard:sales` (排行榜) 總分必須相等。
-
-### 重置環境 (Reset)
-
-若需清空所有 Redis 數據（包含訂單、庫存變更、排行榜），可執行：
-
-```bash
-npx tsx scripts/debug-reset.ts
+# 恢復（需先停止 Redis）
+pnpm docker:down
+cp -r redis-data-backup/ redis-data/
+pnpm docker:up
 ```
 
 ## 尚待解決之問題

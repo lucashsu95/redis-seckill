@@ -1,11 +1,19 @@
-export type RedisJsonMgetResponse<T> = Array<[T]>
+export type RedisJsonMgetResponse<T> = (string | null)[]
 
-export function extractJsonValue<T>(response: [T]): T {
-  return response[0]
+export function extractJsonValue<T>(response: string | null): T | null {
+  if (!response) return null
+  try {
+    const parsed = JSON.parse(response)
+    return Array.isArray(parsed) ? parsed[0] : parsed
+  } catch {
+    return null
+  }
 }
 
-export function extractJsonValues<T>(responses: Array<[T]>): T[] {
-  return responses.map((r) => r[0])
+export function extractJsonValues<T>(responses: (string | null)[]): T[] {
+  return responses
+    .map((r) => extractJsonValue<T>(r))
+    .filter((r): r is T => r !== null)
 }
 
 export interface Order {

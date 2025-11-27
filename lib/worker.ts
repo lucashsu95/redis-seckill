@@ -11,11 +11,14 @@ export async function processOrders(batchSize = 200) {
   const consumerName = `worker-${process.pid}`
 
   const streamData = (await redis.xreadgroup(
+    "GROUP",
     GROUP,
     consumerName,
-    [keys.ordersStream],
-    [">"],
-    { count: batchSize }
+    "COUNT",
+    batchSize,
+    "STREAMS",
+    keys.ordersStream,
+    ">"
   )) as XReadResult
 
   if (!streamData || streamData.length === 0) {
@@ -57,11 +60,11 @@ export async function processOrders(batchSize = 200) {
       processedAt: Date.now(),
     }
 
-    pipeline.json.set(keys.order(orderId), "$", order)
+    pipeline.call("JSON.SET", keys.order(orderId), "$", JSON.stringify(order))
 
-    pipeline.zadd(keys.ordersIndex, { score: order.createdAt, member: orderId })
+    pipeline.zadd(keys.ordersIndex, order.createdAt, orderId)
 
-    pipeline.zadd(keys.userOrders(userId), { score: order.createdAt, member: orderId })
+    pipeline.zadd(keys.userOrders(userId), order.createdAt, orderId)
 
     const currentSales = productSalesMap.get(productId) || 0;
     productSalesMap.set(productId, currentSales + order.price);

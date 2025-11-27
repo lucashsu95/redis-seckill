@@ -47,9 +47,15 @@ export async function attemptSeckill(
 
   const result = await redis.eval(
     SECKILL_SCRIPT,
-    [keys.productStock(productId), keys.ordersStream],
-    [userId, productId, orderId, price.toString(), timestamp],
-  )
+    2, // numKeys
+    keys.productStock(productId),
+    keys.ordersStream,
+    userId,
+    productId,
+    orderId,
+    price.toString(),
+    timestamp,
+  ) as number
 
   if (result === 1) {
     if (soldOutCooldownMap.has(productId)) {
@@ -65,6 +71,6 @@ export async function attemptSeckill(
 }
 
 export async function getProductStock(productId: string): Promise<number> {
-  const stock = await redis.get<string>(keys.productStock(productId))
+  const stock = await redis.get(keys.productStock(productId))
   return stock ? Number.parseInt(stock) : 0
 }

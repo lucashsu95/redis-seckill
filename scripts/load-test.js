@@ -7,13 +7,12 @@ const successRate = new Rate("success")
 
 export const options = {
   stages: [
-    { duration: "10s", target: 20 },  // 階段 1：緩慢上升到 20 個用戶
-    { duration: "10s", target: 100 },  // 階段 2：上升到 100 個用戶
-    { duration: "20s", target: 200 },  // 階段 3：上升到 200 個用戶
-    { duration: "10s", target: 0 },   // 階段 4：下降到 0 個用戶
+    { duration: '5s', target: 500 },  // 快速上升到 500 VUs
+    { duration: '20s', target: 1000 },  // 快速上升到 1000 VUs
+    { duration: '5s', target: 0 },
   ],
   thresholds: {
-    http_req_duration: ["p(95)<500"],
+    http_req_duration: ["p(95)<1000"],
     http_req_failed: ["rate<0.99"],
     errors: ["rate<0.1"],
   },

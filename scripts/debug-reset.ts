@@ -7,10 +7,13 @@ async function scanDelete(pattern: string) {
   const keys: string[] = [];
 
   do {
-    const [nextCursor, foundKeys]: [number | string, string[]] = await redis.scan(cursor, {
-      match: pattern,
-      count: 1000
-    });
+    const [nextCursor, foundKeys]: [string, string[]] = await redis.scan(
+      cursor,
+      "MATCH",
+      pattern,
+      "COUNT",
+      1000
+    );
 
     cursor = nextCursor;
     keys.push(...foundKeys);

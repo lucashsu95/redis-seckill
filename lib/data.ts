@@ -1,7 +1,7 @@
 import { redis, keys } from "./redis"
 import type { CreateProductInput, Order } from "./types"
 import type { RedisJsonMgetResponse } from "./types"
-import { extractJsonValues } from "./types"
+import { extractJsonValues, extractJsonValue } from "./types"
 
 export interface Product {
   id: string
@@ -16,7 +16,7 @@ export async function getProducts(): Promise<Product[]> {
   let cursor: number | string = 0
 
   do {
-    const [nextCursor, foundKeys]: [number | string, string[]] = await redis.scan(cursor, { match: "product:*", count: 100 })
+    const [nextCursor, foundKeys] = (await redis.scan(cursor, "MATCH", "product:*", "COUNT", 100)) as [string, string[]]
     cursor = nextCursor
 
     for (const key of foundKeys) {
@@ -28,15 +28,15 @@ export async function getProducts(): Promise<Product[]> {
 
   if (productKeys.length === 0) return []
 
-  const productsJSON = (await redis.json.mget(productKeys, "$")) as RedisJsonMgetResponse<Omit<Product, 'stock'>>
+  const productsJSON = (await redis.call("JSON.MGET", ...productKeys, "$")) as RedisJsonMgetResponse<Omit<Product, 'stock'>>
 
   const stockKeys = productKeys.map((k) => `${k}:stock`)
-  const stocks = await redis.mget<string[]>(...stockKeys)
+  const stocks = await redis.mget(...stockKeys)
 
-  const productDetails = extractJsonValues(productsJSON)
+  const productDetails = extractJsonValues<Omit<Product, 'stock'>>(productsJSON)
   return productKeys.map((key, index) => {
     return {
-      ...productDetails[index],
+      ...(productDetails[index] || {}),
       stock: stocks[index] ? Number.parseInt(stocks[index]) : 0,
     }
   })
@@ -48,39 +48,39 @@ export async function getGlobalOrders(page = 1, limit = 20): Promise<{ orders: O
 
   const total = await redis.zcard(keys.ordersIndex)
 
-  const orderIds = await redis.zrange(keys.ordersIndex, start, end, { rev: true })
+  const orderIds = await redis.zrevrange(keys.ordersIndex, start, end)
 
   if (orderIds.length === 0) {
     return { orders: [], total }
   }
 
   const orderKeys = orderIds.map((id) => keys.order(id as string))
-  const ordersJSON = (await redis.json.mget(orderKeys, "$")) as RedisJsonMgetResponse<Order>
+  const ordersJSON = (await redis.call("JSON.MGET", ...orderKeys, "$")) as RedisJsonMgetResponse<Order>
 
-  const orders = extractJsonValues(ordersJSON)
+  const orders = extractJsonValues<Order>(ordersJSON)
 
   return { orders, total }
 }
 
 export async function getUserOrders(userId: string): Promise<Order[]> {
-  const orderIds = await redis.zrange(keys.userOrders(userId), 0, -1, { rev: true })
+  const orderIds = await redis.zrevrange(keys.userOrders(userId), 0, -1)
 
   if (orderIds.length === 0) return []
 
   const orderKeys = orderIds.map((id) => keys.order(id as string))
-  const ordersJSON = (await redis.json.mget(orderKeys, "$")) as RedisJsonMgetResponse<Order>
+  const ordersJSON = (await redis.call("JSON.MGET", ...orderKeys, "$")) as RedisJsonMgetResponse<Order>
 
-  return extractJsonValues(ordersJSON)
+  return extractJsonValues<Order>(ordersJSON)
 }
 
 export async function getLeaderboard(): Promise<{ productId: string; revenue: number }[]> {
-  const result = await redis.zrange(keys.leaderboard, 0, 9, { rev: true, withScores: true })
+  const result = await redis.zrevrange(keys.leaderboard, 0, 9, "WITHSCORES")
 
   const leaderboard = []
   for (let i = 0; i < result.length; i += 2) {
     leaderboard.push({
       productId: result[i] as string,
-      revenue: result[i + 1] as number,
+      revenue: Number(result[i + 1]),
     })
   }
 
@@ -88,7 +88,8 @@ export async function getLeaderboard(): Promise<{ productId: string; revenue: nu
 }
 
 export async function deleteOrder(orderId: string) {
-  const orderData = await redis.json.get(keys.order(orderId))
+  const orderDataRaw = (await redis.call("JSON.GET", keys.order(orderId))) as string
+  const orderData = extractJsonValue<Order>(orderDataRaw)
 
   if (!orderData) {
     throw new Error("Order not found")
@@ -100,7 +101,7 @@ export async function deleteOrder(orderId: string) {
   pipeline.zrem(keys.ordersIndex, orderId)
   pipeline.zrem(keys.userOrders(order.userId), orderId)
   pipeline.zincrby(keys.leaderboard, -order.price, order.productId)
-  pipeline.json.del(keys.order(orderId))
+  pipeline.call("JSON.DEL", keys.order(orderId))
   pipeline.incr(keys.productStock(order.productId))
 
   await pipeline.exec()
@@ -149,7 +150,7 @@ export async function createProduct(input: CreateProductInput) {
 
   const pipeline = redis.pipeline()
 
-  pipeline.json.set(keys.product(id), "$", product)
+  pipeline.call("JSON.SET", keys.product(id), "$", JSON.stringify(product))
 
   pipeline.set(keys.productStock(id), stock)
 

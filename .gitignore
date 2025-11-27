@@ -40,3 +40,7 @@ package-lock.json
 
 # Build output
 dist/
+
+# Docker
+redis-data/
+

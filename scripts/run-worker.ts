@@ -9,7 +9,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 async function runWorkerLoop() {
   while (true) {
     try {
-      const result = await processOrders(400)
+      const result = await processOrders(500)
 
       if (result.processed <= 0) {
         await delay(500)
@@ -22,14 +22,13 @@ async function runWorkerLoop() {
 
 async function init() {
   try {
-    await redis.xgroup(
+    await redis.call(
+      "XGROUP",
+      "CREATE",
       keys.ordersStream,
-      {
-        type: "CREATE",
-        group: "order-workers",
-        id: "0",
-        options: { MKSTREAM: true }
-      }
+      "order-workers",
+      "0",
+      "MKSTREAM"
     )
   } catch (err: any) {
     if (!String(err?.message).includes("BUSYGROUP")) {
