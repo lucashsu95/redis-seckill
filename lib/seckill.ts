@@ -51,7 +51,7 @@ export async function attemptSeckill(
     [userId, productId, orderId, price.toString(), timestamp],
   )
 
-if (result === 1) {
+  if (result === 1) {
     if (soldOutCooldownMap.has(productId)) {
         soldOutCooldownMap.delete(productId);
     }

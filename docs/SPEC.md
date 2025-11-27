@@ -73,7 +73,7 @@ Worker 消費 Stream 訊息，將資料「實體化」並建立索引。此步�
       * **挑戰**: 需避免索引殘留 (Dangling References)。
       * **邏輯**: 使用 `MULTI` 同時刪除：
         1.  `DEL order:{id}` (實體)
-        2.  `ZREM orders:global {id}` (全域索引)
+        2.  `ZREM orders:index {id}` (全域索引)
         3.  `LREM user:{uid}:orders 0 {id}` (用戶索引)
     
     * **商品管理 (Product Management)**:

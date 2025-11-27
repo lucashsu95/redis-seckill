@@ -83,8 +83,6 @@
 
 #### 頁面 6: 後台管理與資料一致性 (Admin & Consistency)
 
-  * **CMS 功能亮點**：
-      * 支援 JSON 內容直接編輯 (Override)。
   * **複雜資料處理**：
       * **級聯刪除 (Cascading Delete)**：當管理員刪除一張訂單時，Redis 事務會同時清理：
         1.  `DEL order:{id}` (實體)
