@@ -1,29 +1,39 @@
-import Redis from "ioredis"
+import Redis from "ioredis";
 
-const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379"
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
-export const redis = new Redis(REDIS_URL, {
-  maxRetriesPerRequest: 3,
-  enableReadyCheck: true,
-  lazyConnect: false,
-})
+const POOL_SIZE = 5; 
 
-// Error handling
-redis.on("error", (err: Error) => {
-  console.error("Redis connection error:", err)
-})
+const redisPool: Redis[] = [];
 
-redis.on("connect", () => {
-  console.log("Redis connected successfully")
-})
+for (let i = 0; i < POOL_SIZE; i++) {
+  const client = new Redis(REDIS_URL, {
+    maxRetriesPerRequest: 3,
+    enableReadyCheck: true,
+    lazyConnect: false,
+  });
 
-// Keys helper
+  client.on("error", (err) => {
+    console.error(`Redis client ${i} error:`, err);
+  });
+  
+  redisPool.push(client);
+}
+
+let poolIndex = 0;
+
+export const getRedisClient = (): Redis => {
+  const client = redisPool[poolIndex];
+  poolIndex = (poolIndex + 1) % POOL_SIZE;
+  return client;
+};
+
 export const keys = {
   product: (id: string) => `product:${id}`,
   productStock: (id: string) => `product:${id}:stock`,
   ordersStream: "orders:stream",
-  order: (id: string) => `order:${id}`, // JSON key
-  ordersIndex: "orders:index", // ZSet
-  userOrders: (userId: string) => `user:${userId}:orders`, // ZSet
-  leaderboard: "leaderboard:sales", // ZSet
-}
+  order: (id: string) => `order:${id}`,
+  ordersIndex: "orders:index",
+  userOrders: (userId: string) => `user:${userId}:orders`,
+  leaderboard: "leaderboard:sales",
+};

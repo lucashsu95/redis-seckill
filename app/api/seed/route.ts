@@ -1,4 +1,4 @@
-import { redis, keys } from "@/lib/redis"
+import { getRedisClient, keys } from "@/lib/redis"
 import { NextResponse } from "next/server"
 
 export async function POST() {
@@ -35,6 +35,7 @@ export async function POST() {
       },
     ]
 
+    const redis = getRedisClient()
     const pipeline = redis.pipeline()
 
     for (const p of products) {

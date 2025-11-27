@@ -1,4 +1,4 @@
-import { redis, keys } from "./redis"
+import { getRedisClient, keys } from "./redis"
 
 const SECKILL_SCRIPT = `
 local stockKey = KEYS[1]
@@ -42,9 +42,10 @@ export async function attemptSeckill(
     return { success: false };
   }
 
-  const orderId = crypto.randomUUID()
+  const orderId = Math.random().toString(36).substring(2, 9)
   const timestamp = Date.now().toString()
 
+  const redis = getRedisClient();
   const result = await redis.eval(
     SECKILL_SCRIPT,
     2, // numKeys
@@ -71,6 +72,6 @@ export async function attemptSeckill(
 }
 
 export async function getProductStock(productId: string): Promise<number> {
-  const stock = await redis.get(keys.productStock(productId))
+  const stock = await getRedisClient().get(keys.productStock(productId))
   return stock ? Number.parseInt(stock) : 0
 }

@@ -1,4 +1,4 @@
-import { redis, keys } from "./redis"
+import { getRedisClient, keys } from "./redis"
 import { Order } from "./types"
 
 type StreamEntry = [string, string[]]
@@ -10,6 +10,7 @@ const GROUP = "order-workers"
 export async function processOrders(batchSize = 200) {
   const consumerName = `worker-${process.pid}`
 
+  const redis = getRedisClient()
   const streamData = (await redis.xreadgroup(
     "GROUP",
     GROUP,

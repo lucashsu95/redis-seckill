@@ -11,7 +11,9 @@
     "reset": "ts-node --project tsconfig.node.json scripts/debug-reset.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f redis"
+    "docker:logs": "docker-compose logs -f redis",
+    "start:pm2": "pm2 start ecosystem.config.js",
+    "stop:pm2": "pm2 delete ecosystem.config.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -76,6 +78,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.2.3",
+    "pm2": "^6.0.14",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "ts-node": "^10.9.2",

@@ -7,8 +7,8 @@ const successRate = new Rate("success")
 
 export const options = {
   stages: [
-    { duration: '5s', target: 500 },  // 快速上升到 500 VUs
-    { duration: '20s', target: 1000 },  // 快速上升到 1000 VUs
+    { duration: '3s', target: 100 },  // 快速上升到 500 VUs
+    { duration: '10s', target: 5000 },  // 快速上升到 5000 VUs
     { duration: '5s', target: 0 },
   ],
   thresholds: {
@@ -21,10 +21,10 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000"
 
 export function setup() {
-  const seedRes = http.post(`${BASE_URL}/api/seed`)
-  check(seedRes, {
-    "seed successful": (r) => r.status === 200,
-  })
+  // const seedRes = http.post(`${BASE_URL}/api/seed`)
+  // check(seedRes, {
+  //   "seed successful": (r) => r.status === 200,
+  // })
 
   sleep(2)
 

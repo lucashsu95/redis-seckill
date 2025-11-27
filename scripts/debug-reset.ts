@@ -1,10 +1,11 @@
 import { config } from "dotenv"
 config({ path: ".env.local" })
-import { redis, keys } from "../lib/redis"
+import { getRedisClient, keys } from "../lib/redis"
 
 async function scanDelete(pattern: string) {
   let cursor: number | string = 0;
   const keys: string[] = [];
+  const redis = getRedisClient()
 
   do {
     const [nextCursor, foundKeys]: [string, string[]] = await redis.scan(
@@ -26,6 +27,7 @@ async function scanDelete(pattern: string) {
 async function run() {
   try {
     console.log("Starting reset debug...")
+    const redis = getRedisClient()
     await redis.ping()
     console.log("Redis connection successful")
 

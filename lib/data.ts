@@ -1,4 +1,4 @@
-import { redis, keys } from "./redis"
+import { getRedisClient, keys } from "./redis"
 import type { CreateProductInput, Order } from "./types"
 import type { RedisJsonMgetResponse } from "./types"
 import { extractJsonValues, extractJsonValue } from "./types"
@@ -14,6 +14,7 @@ export interface Product {
 export async function getProducts(): Promise<Product[]> {
   const productKeys: string[] = []
   let cursor: number | string = 0
+  const redis = getRedisClient()
 
   do {
     const [nextCursor, foundKeys] = (await redis.scan(cursor, "MATCH", "product:*", "COUNT", 100)) as [string, string[]]
@@ -43,6 +44,7 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getGlobalOrders(page = 1, limit = 20): Promise<{ orders: Order[]; total: number }> {
+  const redis = getRedisClient()
   const start = (page - 1) * limit
   const end = start + limit - 1
 
@@ -63,6 +65,7 @@ export async function getGlobalOrders(page = 1, limit = 20): Promise<{ orders: O
 }
 
 export async function getUserOrders(userId: string): Promise<Order[]> {
+  const redis = getRedisClient()
   const orderIds = await redis.zrevrange(keys.userOrders(userId), 0, -1)
 
   if (orderIds.length === 0) return []
@@ -74,6 +77,7 @@ export async function getUserOrders(userId: string): Promise<Order[]> {
 }
 
 export async function getLeaderboard(): Promise<{ productId: string; revenue: number }[]> {
+  const redis = getRedisClient()
   const result = await redis.zrevrange(keys.leaderboard, 0, 9, "WITHSCORES")
 
   const leaderboard = []
@@ -88,6 +92,7 @@ export async function getLeaderboard(): Promise<{ productId: string; revenue: nu
 }
 
 export async function deleteOrder(orderId: string) {
+  const redis = getRedisClient()
   const orderDataRaw = (await redis.call("JSON.GET", keys.order(orderId))) as string
   const orderData = extractJsonValue<Order>(orderDataRaw)
 
@@ -110,6 +115,7 @@ export async function deleteOrder(orderId: string) {
 }
 
 export async function deleteProduct(productId: string) {
+  const redis = getRedisClient()
   const productKey = keys.product(productId)
   const exists = await redis.exists(productKey)
 
@@ -129,6 +135,7 @@ export async function deleteProduct(productId: string) {
 
 export async function createProduct(input: CreateProductInput) {
   const { id, name, price, image, stock } = input
+  const redis = getRedisClient()
 
   if (!id || !name || price === undefined || stock === undefined) {
     throw new Error("Missing required fields")
@@ -160,6 +167,7 @@ export async function createProduct(input: CreateProductInput) {
 }
 
 export async function restockProduct(productId: string, amount: number) {
+  const redis = getRedisClient()
   if (!productId || amount === undefined) {
     throw new Error("Missing required fields")
   }

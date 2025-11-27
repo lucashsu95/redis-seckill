@@ -1,6 +1,6 @@
 import { config } from "dotenv"
 config({ path: ".env.local" })
-import { redis, keys } from "../lib/redis"
+import { getRedisClient, keys } from "../lib/redis"
 
 import { processOrders } from "../lib/worker"
 
@@ -21,6 +21,7 @@ async function runWorkerLoop() {
 }
 
 async function init() {
+  const redis = getRedisClient()
   try {
     await redis.call(
       "XGROUP",

@@ -86,6 +86,20 @@ pnpm docker:logs
 docker exec -it redis-seckill redis-cli
 ```
 
+```bash
+# 1. 先編譯 (PM2 是跑 Production build)
+pnpm build
+
+# 2. 啟動 PM2
+pnpm start:pm2
+
+# 3. 查看狀態 (你會看到多個 process 在跑)
+npx pm2 list
+
+# 4. 查看即時負載
+npx pm2 monit
+```
+
 ### 數據備份
 
 Redis 數據儲存於 `redis-data/` 目錄，可直接備份此目錄：
