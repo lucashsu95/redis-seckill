@@ -4,6 +4,7 @@ import { Leaderboard } from "@/components/leaderboard"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ShoppingBag, ShieldCheck } from "lucide-react"
+import { SeedButton } from "@/components/seed-button"
 
 export const dynamic = "force-dynamic"
 
@@ -58,9 +59,7 @@ export default async function Home() {
               <div className="p-12 border rounded-lg bg-muted/50 text-center">
                 <h3 className="text-lg font-medium mb-2">沒有活動中的銷售</h3>
                 <p className="text-muted-foreground mb-4">系統需要被種子腳本填充。</p>
-                <form action="/api/seed" method="POST">
-                  <Button>種子腳本</Button>
-                </form>
+                <SeedButton />
               </div>
             )}
           </div>
