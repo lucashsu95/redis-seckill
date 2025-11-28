@@ -55,11 +55,6 @@ export function ProductCard({ product }: ProductCardProps) {
         }),
       })
 
-      // 沒有 worker 的情況下，直接處理訂單
-      // await fetch("/api/worker/process", {
-      //   method: "POST",
-      // })
-
       const data = await res.json()
 
       if (data.success) {

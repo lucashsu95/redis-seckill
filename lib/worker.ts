@@ -8,7 +8,7 @@ type XReadResult = StreamResult[] | null
 const GROUP = "order-workers"
 
 export async function processOrders(batchSize = 200) {
-  const consumerName = `worker-${process.pid}`
+  const consumerName = 'vercel-cron-worker';
 
   const streamData = (await redis.xreadgroup(
     GROUP,
