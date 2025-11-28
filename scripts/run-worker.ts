@@ -9,7 +9,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 async function runWorkerLoop() {
   while (true) {
     try {
-      const result = await processOrders(500)
+      const result = await processOrders(100)
 
       if (result.processed <= 0) {
         await delay(500)

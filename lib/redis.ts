@@ -13,7 +13,7 @@ for (let i = 0; i < POOL_SIZE; i++) {
     lazyConnect: false,
   });
 
-  client.on("error", (err) => {
+  client.on("error", (err: Error) => {
     console.error(`Redis client ${i} error:`, err);
   });
   
