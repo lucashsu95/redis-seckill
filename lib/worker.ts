@@ -33,8 +33,6 @@ export async function processOrders(batchSize = 200) {
 
   const pipeline = redis.pipeline()
   const processedIds: string[] = []
-  const productSalesMap = new Map<string, number>();
-
   for (const message of messages) {
     const messageId = message[0]
     const fields = message[1]
@@ -61,22 +59,17 @@ export async function processOrders(batchSize = 200) {
       processedAt: Date.now(),
     }
 
-    pipeline.call("JSON.SET", keys.order(orderId), "$", JSON.stringify(order))
-
+    // Transaction per message for atomicity
+    pipeline.call("MULTI")
+    pipeline.set(keys.order(orderId), JSON.stringify(order))
+    pipeline.lpush(keys.userOrders(userId), orderId)
     pipeline.zadd(keys.ordersIndex, order.createdAt, orderId)
-
-    pipeline.zadd(keys.userOrders(userId), order.createdAt, orderId)
-
-    const currentSales = productSalesMap.get(productId) || 0;
-    productSalesMap.set(productId, currentSales + order.price);
+    pipeline.zincrby(keys.leaderboard, 1, productId)
+    pipeline.call("EXEC")
 
     pipeline.xack(keys.ordersStream, GROUP, messageId)
 
     processedIds.push(orderId)
-  }
-
-  for (const [productId, totalSales] of productSalesMap.entries()) {
-    pipeline.zincrby(keys.leaderboard, totalSales, productId)
   }
 
   await pipeline.exec()

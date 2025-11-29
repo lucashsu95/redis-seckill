@@ -12,9 +12,8 @@ export const options = {
     { duration: '5s', target: 0 },
   ],
   thresholds: {
-    http_req_duration: ["p(95)<1000"],
-    http_req_failed: ["rate<0.99"],
-    errors: ["rate<0.1"],
+    http_req_duration: ['p(95)<200'], // 本地 TCP 延遲應極低
+    http_req_failed: ['rate<0.001'],  // 不應有失敗
   },
 }
 
