@@ -1,11 +1,13 @@
-version: '3.8'
-
 services:
   redis:
     image: redis/redis-stack:latest
     container_name: redis-seckill
     ports:
       - "6379:6379"
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     volumes:
       - ./redis-data:/data
     healthcheck:

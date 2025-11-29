@@ -10,7 +10,7 @@ export async function POST() {
         name: "2025 年遊戲筆記型電腦",
         price: 1299,
         image: "/modern-laptop-workspace.png",
-        stock: 3000,
+        stock: 4000,
       },
       {
         id: "p2",

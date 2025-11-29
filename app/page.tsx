@@ -73,7 +73,7 @@ export default async function Home() {
 
       <footer className="border-t py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          建立於 Next.js + Upstash Redis
+          建立於 Next.js
         </div>
       </footer>
     </div>

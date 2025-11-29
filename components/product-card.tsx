@@ -83,7 +83,7 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <Card className="overflow-hidden flex flex-col h-full">
+    <Card className="overflow-hidden flex flex-col h-full pt-0">
       <div className="relative h-48 w-full overflow-hidden bg-muted">
         <img
           src={product.image || "/placeholder.svg"}

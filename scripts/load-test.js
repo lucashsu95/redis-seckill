@@ -7,23 +7,24 @@ const successRate = new Rate("success")
 
 export const options = {
   stages: [
-    { duration: '3s', target: 1000 },  // 快速上升到 1000 VUs
-    { duration: '10s', target: 11000 },  // 快速上升到 11000 VUs
-    { duration: '5s', target: 0 },
+    { duration: '30s', target: 1000 },
+    { duration: '3m', target: 5000 },
+    // { duration: '1m', target: 8000 },
+    { duration: '30s', target: 0 },
   ],
   thresholds: {
-    http_req_duration: ['p(95)<200'], // 本地 TCP 延遲應極低
-    http_req_failed: ['rate<0.001'],  // 不應有失敗
+    http_req_duration: ['p(95)<200'],
+    http_req_failed: ['rate<0.001'],
   },
-}
+};
 
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000"
 
 export function setup() {
-  // const seedRes = http.post(`${BASE_URL}/api/seed`)
-  // check(seedRes, {
-  //   "seed successful": (r) => r.status === 200,
-  // })
+  const seedRes = http.post(`${BASE_URL}/api/seed`)
+  check(seedRes, {
+    "seed successful": (r) => r.status === 200,
+  })
 
   sleep(2)
 
