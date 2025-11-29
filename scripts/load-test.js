@@ -1,14 +1,18 @@
 import http from "k6/http"
 import { check, sleep } from "k6"
-import { Rate } from "k6/metrics"
+import { Rate, Counter } from "k6/metrics"
 
 const errorRate = new Rate("errors")
 const successRate = new Rate("success")
+const status200 = new Counter("status_200_ok");
+const status409 = new Counter("status_409_sold_out");
+const status429 = new Counter("status_429_rate_limit");
+const status5xx = new Counter("status_5xx_server_error");
 
 export const options = {
   stages: [
     { duration: '30s', target: 50 },
-    { duration: '1m', target: 300 },
+    { duration: '30s', target: 300 },
     { duration: '30s', target: 0 },
   ],
   thresholds: {
@@ -53,10 +57,16 @@ export default function (data) {
     headers: {
       "Content-Type": "application/json",
     },
-    throw: false
+    throw: false,
+    responseCallback: http.expectedStatuses(200, 409)
   }
 
   const res = http.post(`${BASE_URL}/api/seckill`, payload, params)
+
+  if (res.status === 200) status200.add(1);
+  else if (res.status === 409) status409.add(1);
+  else if (res.status === 429) status429.add(1);
+  else if (res.status >= 500) status5xx.add(1);
 
   check(res, {
     "status is 200 or 409": (r) => r.status === 200 || r.status === 409,
@@ -80,4 +90,9 @@ export default function (data) {
   }
 
   sleep(Math.random() * 0.5 + 0.1)
+  console.log(res.body)
+  console.log('200:', status200)
+  console.log('409:', status409)
+  console.log('429:', status429)
+  console.log('5xx:', status5xx)
 }
